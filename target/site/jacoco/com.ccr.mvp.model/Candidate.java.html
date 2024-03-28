@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Candidate.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ccr-mvp</a> &gt; <a href="index.source.html" class="el_package">com.ccr.mvp.model</a> &gt; <span class="el_source">Candidate.java</span></div><h1>Candidate.java</h1><pre class="source lang-java linenums">package com.ccr.mvp.model;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import lombok.Data;
+
+@Entity
+<span class="pc bnc" id="L22" title="All 94 branches missed.">@Data</span>
+public class Candidate {
+
+	@Id
+	@Column(name = &quot;candidateId&quot;)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+<span class="nc" id="L28">	private Long candidateId;</span>
+<span class="nc" id="L29">	private Long candidateAadhar;</span>
+<span class="nc" id="L30">	private String candidateDob;</span>
+<span class="nc" id="L31">	private Integer candidateOtp;</span>
+<span class="nc" id="L32">	private Date otpExpiration;</span>
+<span class="nc" id="L33">	private Double candidateAvgScore;</span>
+	
+	
+	@OneToOne
+    @JoinColumn(name = &quot;image_id&quot;)
+<span class="nc" id="L38">    private Image image;</span>
+
+	@OneToMany(mappedBy = &quot;candidate&quot;)
+	@JsonIgnore
+<span class="nc" id="L42">	private List&lt;Comment&gt; comment;</span>
+
+	@OneToMany(mappedBy = &quot;candidate&quot;)
+	@JsonIgnore
+<span class="nc" id="L46">	private List&lt;Answer&gt; answer;</span>
+
+	@OneToMany(mappedBy = &quot;candidate&quot;)
+	@JsonIgnore
+<span class="nc" id="L50">	private List&lt;CalculatedScore&gt; calculatedScore;</span>
+
+	@OneToOne
+	@JoinColumn(name = &quot;userId&quot;)
+<span class="nc" id="L54">	private User user;</span>
+
+	public void addAverageScore(CalculatedScore score) {
+<span class="nc bnc" id="L57" title="All 2 branches missed.">		if (calculatedScore == null) {</span>
+<span class="nc" id="L58">			calculatedScore = new ArrayList&lt;&gt;();</span>
+		}
+<span class="nc" id="L60">		calculatedScore.add(score);</span>
+<span class="nc" id="L61">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

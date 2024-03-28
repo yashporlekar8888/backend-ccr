@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CategoryController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ccr-mvp</a> &gt; <a href="index.source.html" class="el_package">com.ccr.mvp.controller</a> &gt; <span class="el_source">CategoryController.java</span></div><h1>CategoryController.java</h1><pre class="source lang-java linenums">package com.ccr.mvp.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.ccr.mvp.model.Category;
+import com.ccr.mvp.model.Question;
+import com.ccr.mvp.service.CategoryService;
+
+import jakarta.transaction.Transactional;
+
+@RestController
+@CrossOrigin(origins = &quot;*&quot;)
+<span class="fc" id="L27">public class CategoryController {</span>
+
+	@Autowired
+	private CategoryService categoryService;
+
+//	@PostMapping(&quot;/createCategory&quot;)
+//	public Category createCategory(@RequestBody Category category) {
+//		return categoryService.createCategory(category);
+//	}
+	@PostMapping(&quot;/createCategory&quot;)
+	@PreAuthorize(&quot;hasRole('CCRADMIN')&quot;)
+	public Category createCategory(@RequestBody Category category) {
+<span class="nc" id="L39">		return categoryService.createCategory(category);</span>
+	}
+
+	@PostMapping(&quot;/{categoryId}/addQuestion&quot;)
+	@PreAuthorize(&quot;hasRole('CCRADMIN')&quot;)
+    public ResponseEntity&lt;String&gt; addQuestionToCategory(@PathVariable Long categoryId,
+            @RequestBody Question question) {
+<span class="nc" id="L46">        Question addedQuestion = categoryService.addQuestionToCategory(categoryId, question);</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        if (addedQuestion != null) {</span>
+<span class="nc" id="L48">            return ResponseEntity.status(HttpStatus.CREATED).body(&quot;Question added successfully&quot;);</span>
+        } else {
+<span class="nc" id="L50">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Category not found&quot;);</span>
+        }
+    }
+
+
+	@GetMapping(&quot;/getAllCategories&quot;)
+	@PreAuthorize(&quot;hasRole('CCRADMIN')&quot;)
+	public List&lt;Category&gt; getAllCategories() {
+<span class="nc" id="L58">		return categoryService.getAllCategories();</span>
+	}
+
+	@DeleteMapping(&quot;removeCategory&quot;)
+	@PreAuthorize(&quot;hasRole('CCRADMIN')&quot;)
+	public ResponseEntity&lt;Category&gt; removeCategory(@RequestParam Long categoryId) {
+<span class="nc" id="L64">		return categoryService.removeCategory(categoryId);</span>
+	}
+
+	@DeleteMapping(&quot;removeQuestion&quot;)
+	@PreAuthorize(&quot;hasRole('CCRADMIN')&quot;)
+	public ResponseEntity&lt;Question&gt; removeQuestion(@RequestParam Long questionId) {
+
+<span class="nc" id="L71">		return categoryService.removeQuestion(questionId);</span>
+
+	}
+
+	@PutMapping(&quot;/updateCategories&quot;)
+	@PreAuthorize(&quot;hasRole('CCRADMIN')&quot;)
+	public ResponseEntity&lt;List&lt;Category&gt;&gt; updateCategories(@RequestBody List&lt;Category&gt; categories) {
+<span class="nc" id="L78">		List&lt;Category&gt; updatedCategories = categoryService.updateCategories(categories);</span>
+<span class="nc" id="L79">		return ResponseEntity.ok(updatedCategories);</span>
+	}
+
+//	@PutMapping(&quot;updateCategoryName&quot;)
+//	public ResponseEntity&lt;Category&gt; updateCategoryName(@RequestParam Long categoryId,
+//			@RequestParam String categoryName) {
+//
+//		return categoryService.updateCategoryName(categoryId, categoryName);
+//
+//	}
+
+//	@PutMapping(&quot;updateQuestion&quot;)
+//	public ResponseEntity&lt;Question&gt; updateQuestion(@RequestParam Long questionId,
+//			@RequestParam String questionContent) {
+//
+//		return categoryService.updateQuestion(questionId, questionContent);
+//
+//	}
+
+	@PutMapping(&quot;updateQuestion&quot;)
+	@PreAuthorize(&quot;hasRole('CCRADMIN')&quot;)
+	public ResponseEntity&lt;Question&gt; updateQuestion(@RequestParam Long questionId, @RequestParam String questionContent,
+			@RequestParam Double weightage) {
+<span class="nc" id="L102">		return categoryService.updateQuestion(questionId, questionContent, weightage);</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

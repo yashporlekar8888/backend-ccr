@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CategoryServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ccr-mvp</a> &gt; <a href="index.source.html" class="el_package">com.ccr.mvp.service.impl</a> &gt; <span class="el_source">CategoryServiceImpl.java</span></div><h1>CategoryServiceImpl.java</h1><pre class="source lang-java linenums">package com.ccr.mvp.service.impl;
+
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import com.ccr.mvp.model.Category;
+import com.ccr.mvp.model.Question;
+import com.ccr.mvp.repository.CategoryRepository;
+import com.ccr.mvp.repository.QuestionRepository;
+import com.ccr.mvp.service.CategoryService;
+
+import jakarta.transaction.Transactional;
+
+@Service
+<span class="fc" id="L22">public class CategoryServiceImpl implements CategoryService {</span>
+
+	@Autowired
+	private CategoryRepository categoryRepository;
+	@Autowired
+	private QuestionRepository questionRepository;
+
+<span class="fc" id="L29">	ZoneId istZone = ZoneId.of(&quot;Asia/Kolkata&quot;);</span>
+<span class="fc" id="L30">	ZonedDateTime istDateTime = ZonedDateTime.now(istZone);</span>
+	// Convert the ZonedDateTime to a Date object
+<span class="fc" id="L32">	Date D = Date.from(istDateTime.toInstant());</span>
+
+	@Override
+	public Category createCategory(Category category) {
+
+<span class="fc" id="L37">		String categoryName = category.getCategoryName();</span>
+<span class="fc" id="L38">		category.setCategoryName(categoryName);</span>
+<span class="fc" id="L39">		Double newCategoryWeightage = 0.0;</span>
+<span class="fc" id="L40">		category.setCategoryWeightage(newCategoryWeightage);</span>
+<span class="fc" id="L41">		category.setCreatedAt(D);</span>
+
+<span class="fc" id="L43">		categoryRepository.save(category);</span>
+
+<span class="fc" id="L45">		return category;</span>
+	}
+
+	@Override
+	public List&lt;Category&gt; getAllCategories() {
+<span class="nc" id="L50">		List&lt;Category&gt; category = categoryRepository.findAll();</span>
+<span class="nc" id="L51">		return category;</span>
+	}
+
+	@Override
+	public Question addQuestionToCategory(Long categoryId, Question question) {
+<span class="nc" id="L56">		Optional&lt;Category&gt; optionalCategory = categoryRepository.findById(categoryId);</span>
+
+<span class="nc bnc" id="L58" title="All 2 branches missed.">		if (optionalCategory.isPresent()) {</span>
+<span class="nc" id="L59">			Category category = optionalCategory.get();</span>
+
+			// Create and save the new question
+
+<span class="nc" id="L63">			question.setQuestionContent(question.getQuestionContent());</span>
+<span class="nc" id="L64">			question.setCategory(category);</span>
+<span class="nc" id="L65">			question.setCreatedAt(D);</span>
+<span class="nc" id="L66">			questionRepository.save(question);</span>
+
+			// Update category and question weightage
+<span class="nc" id="L69">			updateQuestionWeightageForCategory(category);</span>
+
+<span class="nc" id="L71">			return question;</span>
+		}
+<span class="nc" id="L73">		return null;</span>
+	}
+
+	// new code add question soham
+
+//	 private void updateQuestionWeightageForCategory(Category categoryToUpdate) {
+//	        List&lt;Question&gt; questionsInCategory = categoryToUpdate.getQuestions();
+//	        int numberOfQuestions = questionsInCategory.size();
+//
+//	        if (numberOfQuestions &gt; 0) {
+//	            double totalWeightage = categoryToUpdate.getCategoryWeightage();
+//	            double individualWeightage = totalWeightage / numberOfQuestions;
+//	            double roundOffQuestionWeightage = Math.round(individualWeightage * 100.0) / 100.0;
+//
+//	            for (Question q : questionsInCategory) {
+//	                q.setWeightage(roundOffQuestionWeightage);
+//	            }
+//	            questionRepository.saveAll(questionsInCategory);
+//	        }
+//	    }
+
+	///////////////////////////////////////////////// newww chat gpt
+	private void updateQuestionWeightageForCategory(Category categoryToUpdate) {
+<span class="nc" id="L96">		List&lt;Question&gt; questionsInCategory = categoryToUpdate.getQuestions();</span>
+<span class="nc" id="L97">		int numberOfQuestions = questionsInCategory.size();</span>
+
+<span class="nc bnc" id="L99" title="All 2 branches missed.">		if (numberOfQuestions &gt; 0) {</span>
+<span class="nc" id="L100">			double totalWeightage = categoryToUpdate.getCategoryWeightage();</span>
+<span class="nc" id="L101">			double defaultWeightage = totalWeightage / numberOfQuestions;</span>
+<span class="nc" id="L102">			double remainingWeightage = totalWeightage;</span>
+
+<span class="nc bnc" id="L104" title="All 2 branches missed.">			for (Question q : questionsInCategory) {</span>
+				// Check if the question has a custom weightage set
+<span class="nc bnc" id="L106" title="All 2 branches missed.">				if (q.getWeightage() != null) {</span>
+<span class="nc" id="L107">					remainingWeightage -= q.getWeightage();</span>
+				}
+<span class="nc" id="L109">			}</span>
+
+<span class="nc" id="L111">			double roundOffDefaultWeightage = Math.round(defaultWeightage * 100.0) / 100.0;</span>
+
+<span class="nc bnc" id="L113" title="All 2 branches missed.">			for (Question q : questionsInCategory) {</span>
+				// Check if the question has a custom weightage set
+<span class="nc bnc" id="L115" title="All 2 branches missed.">				if (q.getWeightage() == null) {</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">					if (remainingWeightage &gt;= roundOffDefaultWeightage) {</span>
+<span class="nc" id="L117">						q.setWeightage(roundOffDefaultWeightage);</span>
+<span class="nc" id="L118">						remainingWeightage -= roundOffDefaultWeightage;</span>
+					} else {
+<span class="nc" id="L120">						q.setWeightage(remainingWeightage);</span>
+					}
+				}
+<span class="nc" id="L123">			}</span>
+<span class="nc" id="L124">			questionRepository.saveAll(questionsInCategory);</span>
+		}
+<span class="nc" id="L126">	}</span>
+
+	// yash code used while delete category
+	private void updateCategoryAndQuestionWeightage() {
+
+<span class="nc" id="L131">		List&lt;Category&gt; categories = categoryRepository.findAll();</span>
+<span class="nc" id="L132">		double totalWeightage = 100.0;</span>
+<span class="nc" id="L133">		double individualWeightage = totalWeightage / categories.size();</span>
+<span class="nc" id="L134">		double roundOffCategoryWeightage = Math.round(individualWeightage * 100.0) / 100.0;</span>
+
+<span class="nc bnc" id="L136" title="All 2 branches missed.">		for (Category existingCategory : categories) {</span>
+<span class="nc" id="L137">			existingCategory.setCategoryWeightage(roundOffCategoryWeightage);</span>
+<span class="nc" id="L138">			categoryRepository.save(existingCategory);</span>
+
+			// Calculate and set question weightage based on the number of questions in the
+			// category
+<span class="nc" id="L142">			List&lt;Question&gt; questionsInCategory = existingCategory.getQuestions();</span>
+<span class="nc" id="L143">			double questionWeightage = individualWeightage / questionsInCategory.size();</span>
+			/// to calculate value of question weightage upto 2decimal places
+<span class="nc" id="L145">			double roundOffQuestionWeightage = Math.round(questionWeightage * 100.0) / 100.0;</span>
+
+<span class="nc bnc" id="L147" title="All 2 branches missed.">			for (Question q : questionsInCategory) {</span>
+<span class="nc" id="L148">				q.setWeightage(roundOffQuestionWeightage);</span>
+<span class="nc" id="L149">			}</span>
+<span class="nc" id="L150">			questionRepository.saveAll(questionsInCategory);</span>
+<span class="nc" id="L151">		}</span>
+<span class="nc" id="L152">	}</span>
+
+	@Override
+	public ResponseEntity&lt;Category&gt; removeCategory(Long categoryId) {
+<span class="nc" id="L156">		Optional&lt;Category&gt; categoryOptional = categoryRepository.findById(categoryId);</span>
+
+<span class="nc bnc" id="L158" title="All 2 branches missed.">		if (categoryOptional.isPresent()) {</span>
+<span class="nc" id="L159">			Category category = categoryOptional.get();</span>
+<span class="nc" id="L160">			categoryRepository.deleteById(categoryId);</span>
+			// updateCategoryAndQuestionWeightage();
+<span class="nc" id="L162">			return ResponseEntity.ok(category);</span>
+		} else {
+
+<span class="nc" id="L165">			return ResponseEntity.notFound().build();</span>
+		}
+	}
+
+	@Override
+	public ResponseEntity&lt;Question&gt; removeQuestion(Long questionId) {
+<span class="nc" id="L171">		Optional&lt;Question&gt; questionOptional = questionRepository.findById(questionId);</span>
+
+<span class="nc bnc" id="L173" title="All 2 branches missed.">		if (questionOptional.isPresent()) {</span>
+<span class="nc" id="L174">			Question question = questionOptional.get();</span>
+<span class="nc" id="L175">			Category category = question.getCategory();</span>
+
+<span class="nc" id="L177">			questionRepository.deleteById(questionId);</span>
+
+			// Update question weightage for the category of the removed question
+<span class="nc" id="L180">			updateQuestionWeightageForCategory(category);</span>
+
+<span class="nc" id="L182">			return ResponseEntity.ok(question);</span>
+		} else {
+<span class="nc" id="L184">			return ResponseEntity.notFound().build();</span>
+		}
+	}
+
+	public List&lt;Category&gt; updateCategories(List&lt;Category&gt; updatedCategories) {
+
+<span class="nc" id="L190">		double totalWeightage = updatedCategories.stream().mapToDouble(Category::getCategoryWeightage).sum();</span>
+
+<span class="nc bnc" id="L192" title="All 2 branches missed.">		if (totalWeightage != 100.0) {</span>
+<span class="nc" id="L193">			throw new RuntimeException(&quot;The total category weightage must be equal to 100.&quot;);</span>
+		}
+
+		// Loop through the list of updated categories and update the categoryWeightage
+		// in the database
+<span class="nc bnc" id="L198" title="All 2 branches missed.">		for (Category updatedCategory : updatedCategories) {</span>
+<span class="nc" id="L199">			Long categoryId = updatedCategory.getCategoryId();</span>
+<span class="nc" id="L200">			Double updatedWeightage = updatedCategory.getCategoryWeightage();</span>
+
+<span class="nc" id="L202">			Category existingCategory = categoryRepository.findById(categoryId).orElse(null);</span>
+
+<span class="nc bnc" id="L204" title="All 2 branches missed.">			if (existingCategory != null) {</span>
+				// Update the categoryWeightage
+<span class="nc" id="L206">				existingCategory.setCategoryWeightage(updatedWeightage);</span>
+<span class="nc" id="L207">				categoryRepository.save(existingCategory);</span>
+			}
+<span class="nc" id="L209">		}</span>
+
+<span class="nc" id="L211">		return updatedCategories;</span>
+	}
+
+//	 @Override
+//	    public ResponseEntity&lt;Question&gt; updateQuestion(Long questionId, String questionContent) {
+//	        Optional&lt;Question&gt; questionOptional = questionRepository.findById(questionId);
+//	        
+//	        if (questionOptional.isPresent()) {
+//	            Question question = questionOptional.get();
+//	            question.setQuestionContent(questionContent);
+//	            questionRepository.save(question);
+//	            return ResponseEntity.ok(question);
+//	        } else {
+//	            return ResponseEntity.notFound().build();
+//	        }
+//	    }
+
+	@Override
+	public ResponseEntity&lt;Question&gt; updateQuestion(Long questionId, String questionContent, Double weightage) {
+<span class="nc" id="L230">		Optional&lt;Question&gt; questionOptional = questionRepository.findById(questionId);</span>
+
+<span class="nc bnc" id="L232" title="All 2 branches missed.">		if (questionOptional.isPresent()) {</span>
+<span class="nc" id="L233">			Question question = questionOptional.get();</span>
+<span class="nc" id="L234">			question.setQuestionContent(questionContent);</span>
+<span class="nc" id="L235">			question.setWeightage(weightage);</span>
+<span class="nc" id="L236">			questionRepository.save(question);</span>
+<span class="nc" id="L237">			return ResponseEntity.ok(question);</span>
+		} else {
+<span class="nc" id="L239">			return ResponseEntity.notFound().build();</span>
+		}
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

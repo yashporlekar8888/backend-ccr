@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CalculatedScoreController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ccr-mvp</a> &gt; <a href="index.source.html" class="el_package">com.ccr.mvp.controller</a> &gt; <span class="el_source">CalculatedScoreController.java</span></div><h1>CalculatedScoreController.java</h1><pre class="source lang-java linenums">package com.ccr.mvp.controller;
+
+import java.io.IOException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.ccr.mvp.model.CalculatedScore;
+import com.ccr.mvp.model.User;
+import com.ccr.mvp.repository.CalculatedScoreRepository;
+import com.ccr.mvp.service.CalculatedScoreService;
+
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
+
+
+@CrossOrigin(origins = &quot;*&quot;)
+@RestController
+<span class="fc" id="L27">public class CalculatedScoreController {</span>
+	
+	@Autowired
+	private CalculatedScoreService calculatedScoreService;
+	@Autowired
+	CalculatedScoreRepository calculatedScoreRepository;
+
+	@PostMapping(&quot;/getHistoryCandidate&quot;)
+	@PreAuthorize(&quot;hasAnyRole('ROLE_HRADMIN','ROLE_RECRUITER','ROLE_CCRADMIN')&quot;)
+	public ResponseEntity&lt;?&gt; getHistoryCandidate(@RequestBody User user) {
+<span class="nc" id="L37">		return calculatedScoreService.getHistoryCandidate(user);</span>
+	}
+
+	@PostMapping(&quot;/getRecruiterInterviews&quot;)
+	@PreAuthorize(&quot;hasAnyRole('ROLE_HRADMIN','ROLE_RECRUITER','ROLE_CCRADMIN')&quot;)
+	public ResponseEntity&lt;?&gt; getRecruiterInterviews(@RequestBody User user) {
+<span class="nc" id="L43">		return calculatedScoreService.getRecruiterInterviews(user);</span>
+	}
+//	@PostMapping(&quot;/getJobRolesByRecruiter&quot;)
+//	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER','CCRADMIN')&quot;)
+//	public ResponseEntity&lt;?&gt; getJobRolesByRecruiter(@RequestBody User user) {
+//		return calculatedScoreService.getJobRolesByRecruiter(user);
+//	}
+//	
+	@PostMapping(&quot;/getInterviewList&quot;)
+	public ResponseEntity&lt;?&gt; getInterviewList(@RequestBody User user) {
+<span class="nc" id="L53">		return calculatedScoreService.getInterviewList(user);</span>
+	}
+	
+	@PostMapping(&quot;/hiredNotHiredForm&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER','CCRADMIN')&quot;)
+	public ResponseEntity&lt;?&gt;hiredNotHiredForm(@RequestBody CalculatedScore calculatedScore){
+<span class="nc" id="L59">		return calculatedScoreService.hiredNotHiredForm(calculatedScore);</span>
+	}
+	@PostMapping(&quot;/todaysJoiningList&quot;)
+	public ResponseEntity&lt;?&gt; todaysJoiningList(@RequestBody User user) {
+<span class="nc" id="L63">		return calculatedScoreService.todaysJoiningList(user);</span>
+	}
+	
+	
+
+	@PostMapping(&quot;/getInReviewCandidates&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER')&quot;)
+	public ResponseEntity&lt;?&gt; getInReviewCandidates(@RequestBody User user) {
+<span class="nc" id="L71">		return calculatedScoreService.getInReviewCandidates(user);</span>
+	}
+	@PostMapping(&quot;/joinedNotJoinedStatus&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER','CCRADMIN')&quot;)
+	public ResponseEntity&lt;?&gt;joinedNotJoinedStatus(@RequestBody CalculatedScore calculatedScore){
+<span class="nc" id="L76">		return calculatedScoreService.joinedNotJoinedStatus(calculatedScore);</span>
+	}
+	@PutMapping(&quot;/changeJoiningDate&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER','CCRADMIN')&quot;)
+	public ResponseEntity&lt;?&gt;changeJoiningDate(@RequestBody CalculatedScore calculatedScore){
+<span class="nc" id="L81">		return calculatedScoreService.changeJoiningDate(calculatedScore);</span>
+	}
+	
+	
+
+	
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

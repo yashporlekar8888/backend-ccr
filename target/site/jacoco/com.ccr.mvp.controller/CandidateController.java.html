@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CandidateController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ccr-mvp</a> &gt; <a href="index.source.html" class="el_package">com.ccr.mvp.controller</a> &gt; <span class="el_source">CandidateController.java</span></div><h1>CandidateController.java</h1><pre class="source lang-java linenums">package com.ccr.mvp.controller;
+
+import java.io.UnsupportedEncodingException;
+
+import jakarta.mail.MessagingException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.ccr.mvp.model.Answer;
+import com.ccr.mvp.model.Candidate;
+import com.ccr.mvp.model.CategoryAverageScoreDTO;
+import com.ccr.mvp.model.User;
+import com.ccr.mvp.service.CandidateService;
+
+@CrossOrigin(origins = &quot;*&quot;)
+@RestController
+<span class="fc" id="L29">public class CandidateController {</span>
+
+	@Autowired
+	private CandidateService candidateService;
+
+	@PersistenceContext
+	EntityManager entityManager;
+
+
+
+	@GetMapping(&quot;/candidateListByAadhar&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER')&quot;)
+	public ResponseEntity&lt;?&gt; candidateListByAadhar(@RequestParam Long candidate_aadhar) {
+<span class="nc" id="L42">		return candidateService.candidateListByAadhar(candidate_aadhar);</span>
+	}
+
+	@GetMapping(&quot;/openCandidateprofileByAadhar&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER')&quot;)
+	public ResponseEntity&lt;?&gt; openCandidateprofileByAadhar(@RequestParam Long aadharNumber) {
+<span class="nc" id="L48">		return candidateService.openCandidateprofileByAadhar(aadharNumber);</span>
+	}
+
+//	// find average score
+//	@PostMapping(&quot;/getCandidateAverageScore&quot;)
+//	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER','CANDIDATE')&quot;)
+//	public ResponseEntity&lt;?&gt; getCandidateAverageScore(@RequestBody Candidate candidate) {
+//
+//		return candidateService.getCandidateAverageScore(candidate);
+//	}
+	
+	// find average score
+	@PostMapping(&quot;/getCandidateAverageScore&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER','CANDIDATE')&quot;)
+	public ResponseEntity&lt;?&gt; getCandidateAverageScore(@RequestBody User user) {
+
+<span class="nc" id="L64">		return candidateService.getCandidateAverageScore(user);</span>
+	}
+
+//	// find average score
+//	@PostMapping(&quot;/getCandidateAverageScoreCategory&quot;)
+//	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER','CANDIDATE')&quot;)
+//	public ResponseEntity&lt;?&gt; getCandidateAverageScoreCategory(@RequestBody Candidate candidate) {
+//
+//		return candidateService.getCandidateAverageScoreCategory(candidate);
+//	}
+	
+	// find average score
+	@PostMapping(&quot;/getCandidateAverageScoreCategory&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER','CANDIDATE')&quot;)
+	public ResponseEntity&lt;?&gt; getCandidateAverageScoreCategory(@RequestBody User user) {
+
+<span class="nc" id="L80">		return candidateService.getCandidateAverageScoreCategory(user);</span>
+	}
+	
+	@GetMapping(&quot;/getAllCandidateList&quot;)
+	@PreAuthorize(&quot;hasRole('CCRADMIN')&quot;)
+	public ResponseEntity&lt;?&gt; getAllCandidateList(){
+<span class="nc" id="L86">		return candidateService.getAllCandidateList();</span>
+	}
+	
+//	// Forgot password API
+//	@PostMapping(value = &quot;/forgot-password&quot;)
+//	public ResponseEntity&lt;String&gt; sendOtpByEmail(@RequestBody Candidate candidate)
+//			throws UnsupportedEncodingException,MessagingException {
+//
+//		return candidateService.sendOtpByEmail(candidate);
+//	}
+//
+//	// OTP Validation
+//	@PostMapping(value = &quot;/candchangepassforgot&quot;)
+//	public ResponseEntity&lt;String&gt; candchangepassforgot(@RequestBody Candidate candidate) {
+//		return candidateService.candchangepassforgot(candidate);
+//	}
+//
+//	// Change password (Using otp)
+//	@PutMapping(value = &quot;/finalcandchangepass&quot;)
+//	public ResponseEntity&lt;String&gt; finalcandchangepass(@RequestBody Candidate candidate) {
+//		return candidateService.finalcandchangepass(candidate);
+//	}
+	
+	// bi-directional mapping sample code (Don'n delete)
+/*	@GetMapping(&quot;/getAllanswer&quot;)
+	public  ResponseEntity&lt;?&gt; getAllanswer(@RequestParam Long candidateId) {
+		return candidateService.getAllanswer(candidateId);
+	}*/
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

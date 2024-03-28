@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RecruiterController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ccr-mvp</a> &gt; <a href="index.source.html" class="el_package">com.ccr.mvp.controller</a> &gt; <span class="el_source">RecruiterController.java</span></div><h1>RecruiterController.java</h1><pre class="source lang-java linenums">package com.ccr.mvp.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.ccr.mvp.controller.dao.CandidateDetailsDto;
+import com.ccr.mvp.model.Candidate;
+import com.ccr.mvp.model.Question;
+import com.ccr.mvp.model.Recruiter;
+import com.ccr.mvp.model.User;
+import com.ccr.mvp.service.RecruiterService;
+
+@CrossOrigin(origins = &quot;*&quot;)
+@RestController
+<span class="fc" id="L29">public class RecruiterController {</span>
+
+	@Autowired
+	RecruiterService recruiterService;
+
+	@GetMapping(&quot;/getAllQuestion&quot;)
+	public List&lt;Question&gt; getAllQuestion() {
+<span class="nc" id="L36">		return recruiterService.getAllQuestion();</span>
+	}
+
+	@PostMapping(&quot;/getCandidateScoreRecruiter&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HR_ADMIN','RECRUITER')&quot;)
+	public ResponseEntity&lt;?&gt; getCandidateScoreRecruiter(@RequestBody Candidate candidate) {
+
+<span class="nc" id="L43">		return recruiterService.getCandidateScoreRecruiter(candidate);</span>
+	}
+
+	// Employee hierachy
+	@GetMapping(&quot;/manager/{managerId}&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HR_ADMIN','RECRUITER')&quot;)
+	public List&lt;Recruiter&gt; getEmployeeHierarchy(@PathVariable Integer managerId) {
+
+<span class="nc" id="L51">		return recruiterService.getEmployeeHierarchy(managerId);</span>
+	}
+
+	// Employee list only added by
+	@PostMapping(&quot;/recruiter&quot;)
+	public List&lt;Recruiter&gt; getEmployeeList(@RequestBody User user) {
+
+<span class="nc" id="L58">		return recruiterService.getEmployeeList(user);</span>
+	}
+	
+	// get employee by email
+	@PostMapping(&quot;/findRecruiterByEmail&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HRADMIN')&quot;)
+	public ResponseEntity&lt;?&gt; findRecruiterByEmail(@RequestBody User user) {
+
+<span class="nc" id="L66">		return recruiterService.findRecruiterByEmail(user);</span>
+	}
+	//Update recruiter's Approver
+	@PutMapping(&quot;/changeApprover&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HRADMIN')&quot;)
+	public ResponseEntity&lt;?&gt; changeApprover(@RequestBody User user,@RequestParam long userId) {
+
+<span class="nc" id="L73">		return recruiterService.changeApprover(user,userId);</span>
+	}
+	//Get updates
+	@GetMapping(&quot;/getUpdates&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER')&quot;)
+	public ResponseEntity&lt;?&gt; getUpdates(@RequestParam long userId) {
+
+<span class="nc" id="L80">		return recruiterService.getUpdates(userId);</span>
+	}
+	
+	@GetMapping(&quot;/getProductsWithPagination&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER')&quot;)
+    private Page&lt;ResponseEntity&lt;CandidateDetailsDto&gt;&gt; getProductsWithPagination(@RequestParam int offset, @RequestParam int pageSize) {
+<span class="nc" id="L86">        return recruiterService.findProductsWithPagination(offset, pageSize);</span>
+    }
+
+	
+	@GetMapping(&quot;/getCandidateListWithPagination&quot;)
+	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER')&quot;)
+	public Page&lt;?&gt; getCandidateList(@RequestParam(defaultValue = &quot;0&quot;) int page, @RequestParam(defaultValue = &quot;3&quot;) int size) {
+<span class="nc" id="L93">		Pageable paging = PageRequest.of(page, size);</span>
+<span class="nc" id="L94">		return null;</span>
+//		return recruiterService.findAllWithPagination(paging);
+	}
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

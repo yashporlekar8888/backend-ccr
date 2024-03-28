@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompanyServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ccr-mvp</a> &gt; <a href="index.source.html" class="el_package">com.ccr.mvp.service.impl</a> &gt; <span class="el_source">CompanyServiceImpl.java</span></div><h1>CompanyServiceImpl.java</h1><pre class="source lang-java linenums">package com.ccr.mvp.service.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import com.ccr.mvp.controller.dao.RegisteredCompanyDetailsDto;
+import com.ccr.mvp.model.Company;
+import com.ccr.mvp.repository.CompanyRepository;
+import com.ccr.mvp.service.CompanyService;
+
+@Service
+<span class="fc" id="L17">public class CompanyServiceImpl implements CompanyService {</span>
+	@Autowired
+	CompanyRepository companyRepository;
+
+	@Override
+	public Company companyRegistration(Company company) {
+<span class="nc" id="L23">		companyRepository.save(company);</span>
+<span class="nc" id="L24">		return company;</span>
+	}
+
+	@Override
+	public void approveRegistration(Long companyId) {
+<span class="nc" id="L29">		companyRepository.findById(companyId).ifPresent(company -&gt; {</span>
+<span class="nc" id="L30">			company.setRegistrationApproval(true);</span>
+<span class="nc" id="L31">			companyRepository.save(company);</span>
+<span class="nc" id="L32">		});</span>
+<span class="nc" id="L33">	}</span>
+
+	@Override
+	public void rejectRegistration(Long companyId) {
+<span class="nc" id="L37">		companyRepository.findById(companyId).ifPresent(company -&gt; {</span>
+<span class="nc" id="L38">			company.setRegistrationApproval(false);</span>
+<span class="nc" id="L39">			companyRepository.save(company);</span>
+<span class="nc" id="L40">		});</span>
+<span class="nc" id="L41">	}</span>
+
+//	@Override
+//	public ResponseEntity&lt;RegisteredCompanyDetailsDto&gt; getNumberOfRegisteredCompanies() {
+//		List&lt;Company&gt; companyDetails = companyRepository.findAll();
+//		RegisteredCompanyDetailsDto registeredCompanyDetailsDto = new RegisteredCompanyDetailsDto();
+//		double count = 0;
+//		for(Company companyDetail : companyDetails) {
+//			if(companyDetail.getRegistrationApproval() == true) {
+//				count++;
+//				registeredCompanyDetailsDto.setCompanyId(companyDetail.getCompanyId());
+//				registeredCompanyDetailsDto.setCompanyName(companyDetail.getCompanyName());
+//				registeredCompanyDetailsDto.setApprovalStatus(true);
+//			}
+//		}
+//		return ResponseEntity.ok(registeredCompanyDetailsDto);
+//	}
+
+	@Override
+	public ResponseEntity&lt;?&gt; getNumberOfRegisteredCompanies() {
+<span class="nc" id="L61">		List&lt;Company&gt; companyDetails = companyRepository.findAll();</span>
+<span class="nc" id="L62">		List&lt;RegisteredCompanyDetailsDto&gt; registeredCompanies = new ArrayList&lt;&gt;();</span>
+
+		/*for (Company companyDetail : companyDetails) {
+			if (companyDetail.getRegistrationApproval()) {
+				RegisteredCompanyDetailsDto registeredCompanyDetailsDto = new RegisteredCompanyDetailsDto(
+						companyDetail.getCompanyId(), companyDetail.getCompanyName(), true);
+
+				registeredCompanies.add(registeredCompanyDetailsDto);
+			}
+		}*/
+
+<span class="nc" id="L73">		return ResponseEntity.ok(companyDetails);</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

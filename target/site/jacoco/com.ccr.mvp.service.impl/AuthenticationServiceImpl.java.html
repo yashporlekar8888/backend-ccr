@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthenticationServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ccr-mvp</a> &gt; <a href="index.source.html" class="el_package">com.ccr.mvp.service.impl</a> &gt; <span class="el_source">AuthenticationServiceImpl.java</span></div><h1>AuthenticationServiceImpl.java</h1><pre class="source lang-java linenums">package com.ccr.mvp.service.impl;
+
+import java.io.UnsupportedEncodingException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Optional;
+
+import org.hibernate.Session;
+import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.ccr.mvp.dto.JwtAuthenticationResponse;
+import com.ccr.mvp.dto.SignInRequest;
+import com.ccr.mvp.dto.SignUpRequest;
+import com.ccr.mvp.model.Candidate;
+import com.ccr.mvp.model.Company;
+import com.ccr.mvp.model.Image;
+import com.ccr.mvp.model.Recruiter;
+import com.ccr.mvp.model.Role;
+import com.ccr.mvp.model.User;
+import com.ccr.mvp.repository.RecruiterRepository;
+import com.ccr.mvp.repository.UserRepository;
+import com.ccr.mvp.service.AuthenticationService;
+import com.ccr.mvp.service.CandidateService;
+import com.ccr.mvp.service.CompanyService;
+import com.ccr.mvp.service.JwtService;
+import com.ccr.mvp.service.RecruiterService;
+import com.ccr.mvp.service.UserService;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
+import lombok.RequiredArgsConstructor;
+
+@Service
+<span class="fc" id="L49">@RequiredArgsConstructor</span>
+public class AuthenticationServiceImpl implements AuthenticationService {
+
+	private final UserRepository userRepository;
+	private final UserService userService;
+	private final PasswordEncoder passwordEncoder;
+	private final JwtService jwtService;
+	private final AuthenticationManager authenticationManager;
+	private final CandidateService candidateService;
+	private final ImageService imageService;
+	private final CompanyService companyService;
+	private final RecruiterService recruiterService;
+
+	@PersistenceContext
+	EntityManager entityManager;
+
+	@Autowired
+	private JavaMailSender javaMailSender;
+
+	@Autowired
+	RecruiterRepository recruiterRepository;
+
+	public JwtAuthenticationResponse signin(SignInRequest request) {
+		try {
+<span class="nc" id="L73">			authenticationManager</span>
+<span class="nc" id="L74">					.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));</span>
+<span class="nc" id="L75">			var user = userRepository.findByEmail(request.getEmail())</span>
+<span class="nc" id="L76">					.orElseThrow(() -&gt; new IllegalArgumentException(&quot;Invalid email or password.&quot;));</span>
+
+<span class="nc" id="L78">			var recruiter = user.getRecruiter();</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">			if (recruiter != null) {</span>
+<span class="nc" id="L80">				var company = recruiter.getCompany();</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">				if (company != null) {</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">					if (!company.getRegistrationApproval()) {</span>
+<span class="nc" id="L83">						throw new IllegalArgumentException(&quot;Company registration not approved.&quot;);</span>
+					}
+				}
+			}
+
+<span class="nc" id="L88">			var jwt = jwtService.generateToken(user);</span>
+
+<span class="nc" id="L90">			return JwtAuthenticationResponse.builder().token(jwt).email(user.getEmail()).role(user.getRole())</span>
+<span class="nc" id="L91">					.userId(user.getUserId()).userName(user.getUserName()).build();</span>
+<span class="nc" id="L92">		} catch (Exception e) {</span>
+<span class="nc" id="L93">			System.out.println(e);</span>
+<span class="nc" id="L94">			throw new IllegalArgumentException(&quot;Something Wrong&quot;);</span>
+		}
+
+	}
+
+//	@Override
+//	public ResponseEntity&lt;?&gt; candidateSignup(SignUpRequest request) {
+//		try {
+//			Candidate candidate = new Candidate();
+//
+//			   var user = User.builder()
+//		                .userName(request.getUserName())
+//		                .email(request.getEmail())
+//		                .password(passwordEncoder.encode(request.getPassword()))
+//		                .phoneNumber(request.getPhoneNumber())
+//		                .role(Role.ROLE_CANDIDATE)
+//		                .profilePictureFile(profilePictureFile) // set profile picture file
+//		                .build();
+//
+//		        user = userService.saveUser(user);
+//		        candidate = candidateService.candidateRegistration(candidate);
+//
+//		        // Save profile picture to storage (you need to implement this)
+//		        saveProfilePicture(user.getUserId(), profilePictureFile);
+//
+//		        return ResponseEntity.status(HttpStatus.CREATED).body(&quot;Candidate Registered successfully&quot;);
+//		    } catch (Exception e) {
+//		        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something Wrong&quot;);
+//		    }
+//		}
+//
+//		private void saveProfilePicture(Long userId, MultipartFile profilePictureFile) {
+//		    // Implement logic to save the profile picture to your storage (e.g., AWS S3, local storage, etc.)
+//		    // Make sure to handle naming, storage, and retrieval of profile pictures
+//		}
+
+	@Override
+	public ResponseEntity&lt;?&gt; candidateSignup(String userName, String candidateAadhar, String candidateDob,
+			String phoneNumber, String email, String password, MultipartFile imageData) {
+		try {
+<span class="nc" id="L134">			Candidate candidate = new Candidate();</span>
+
+<span class="nc" id="L136">			var user = User.builder().userName(userName).email(email).password(passwordEncoder.encode(password))</span>
+<span class="nc" id="L137">					.phoneNumber(Long.parseLong(phoneNumber)).role(Role.ROLE_CANDIDATE).build();</span>
+
+<span class="nc" id="L139">			user = userService.saveUser(user);</span>
+
+<span class="nc" id="L141">			Image image = new Image();</span>
+<span class="nc" id="L142">			image.setData(imageData.getBytes());</span>
+<span class="nc" id="L143">			image.setUser(user);</span>
+<span class="nc" id="L144">			imageService.saveImage(image);</span>
+
+<span class="nc" id="L146">			candidate.setImage(image);</span>
+<span class="nc" id="L147">			candidate = candidateService.candidateRegistration(candidate);</span>
+
+<span class="nc" id="L149">			return ResponseEntity.status(HttpStatus.CREATED).body(&quot;Candidate Registered successfully&quot;);</span>
+<span class="nc" id="L150">		} catch (Exception e) {</span>
+<span class="nc" id="L151">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something Wrong&quot;);</span>
+		}
+	}
+
+	@Override
+	public ResponseEntity&lt;?&gt; hrAdminSignup(SignUpRequest request) {
+		try {
+<span class="nc" id="L158">			var user = User.builder().userName(request.getUserName()).email(request.getEmail())</span>
+<span class="nc" id="L159">					.password(passwordEncoder.encode(request.getPassword())).phoneNumber(request.getPhoneNumber())</span>
+<span class="nc" id="L160">					.role(Role.ROLE_HRADMIN).build();</span>
+
+<span class="nc" id="L162">			Company company = new Company();</span>
+<span class="nc" id="L163">			Recruiter hrRecruiter = new Recruiter();</span>
+<span class="nc" id="L164">			long defaultAddedBy = 0;</span>
+
+<span class="nc" id="L166">			company.setCompanyName(request.getCompanyName());</span>
+<span class="nc" id="L167">			company.setCompanyAddress(request.getCompanyAddress());</span>
+<span class="nc" id="L168">			company.setCompanyPhoneNumber(request.getCompanyPhoneNumber());</span>
+<span class="nc" id="L169">			company.setCompanyTan(request.getCompanyTan());</span>
+<span class="nc" id="L170">			company.setRegistrationApproval(null);</span>
+<span class="nc" id="L171">			hrRecruiter.setApprovePower(true);</span>
+<span class="nc" id="L172">			hrRecruiter.setAddedPower(true);</span>
+<span class="nc" id="L173">			hrRecruiter.setAddedBy(defaultAddedBy);</span>
+<span class="nc" id="L174">			hrRecruiter.setUser(user);</span>
+<span class="nc" id="L175">			hrRecruiter.setCompany(company);</span>
+<span class="nc" id="L176">			user = userService.saveUser(user);</span>
+<span class="nc" id="L177">			company = companyService.companyRegistration(company);</span>
+<span class="nc" id="L178">			hrRecruiter.setApprover(user.getUserId());</span>
+<span class="nc" id="L179">			hrRecruiter = recruiterService.hrAdminRegistration(hrRecruiter);</span>
+<span class="nc" id="L180">			return ResponseEntity.status(HttpStatus.CREATED).body(&quot;HRADMIN &amp; Company Registered sucessfully&quot;);</span>
+
+<span class="nc" id="L182">		} catch (Exception e) {</span>
+<span class="nc" id="L183">			System.out.println(e);</span>
+<span class="nc" id="L184">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something Wrong&quot;);</span>
+		}
+	}
+
+	@Override
+	public ResponseEntity&lt;?&gt; recruiterSignup(SignUpRequest request) {
+		try {
+
+<span class="nc" id="L192">			User u = new User();</span>
+<span class="nc" id="L193">			Long userId = request.getUserId();</span>
+			
+			//Previous Code
+			//u = userRepository.findById(userId).get();
+			
+			//Code Given by Sonarqube
+<span class="nc" id="L199">			Optional&lt;User&gt; optionalUser = userRepository.findById(userId); u = optionalUser.orElse(null); </span>
+			
+
+			
+
+
+<span class="nc" id="L205">			boolean a = u.getRecruiter().isAddedPower();</span>
+<span class="nc" id="L206">			boolean b = u.getRecruiter().isApprovePower();</span>
+
+<span class="nc bnc" id="L208" title="All 4 branches missed.">			if (a == true &amp;&amp; b == true) {</span>
+<span class="nc bnc" id="L209" title="All 4 branches missed.">				if (request.isAddedPower() == true &amp;&amp; request.isApprovePower() == true) {</span>
+<span class="nc" id="L210">					bothTrue(request);</span>
+				}
+
+<span class="nc bnc" id="L213" title="All 4 branches missed.">				else if (request.isAddedPower() == true &amp;&amp; request.isApprovePower() == false) {</span>
+<span class="nc" id="L214">					oneTrue(request);</span>
+				}
+
+<span class="nc bnc" id="L217" title="All 4 branches missed.">				else if (request.isAddedPower() == false &amp;&amp; request.isApprovePower() == false) {</span>
+<span class="nc" id="L218">					bothFalse(request);</span>
+				} else {
+<span class="nc" id="L220">					return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Wrong Powers&quot;);</span>
+				}
+			}
+
+<span class="nc bnc" id="L224" title="All 4 branches missed.">			else if (a == true &amp;&amp; b == false) {</span>
+
+<span class="nc bnc" id="L226" title="All 4 branches missed.">				if (request.isAddedPower() == true &amp;&amp; request.isApprovePower() == false) {</span>
+<span class="nc" id="L227">					oneTrue(request);</span>
+<span class="nc bnc" id="L228" title="All 4 branches missed.">				} else if (request.isAddedPower() == false &amp;&amp; request.isApprovePower() == false) {</span>
+<span class="nc" id="L229">					bothFalse(request);</span>
+				} else {
+<span class="nc" id="L231">					return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="nc" id="L232">							.body(&quot;Wrong Powers or You don't have power to add/approve&quot;);</span>
+				}
+			}
+
+			else {
+
+<span class="nc" id="L238">				return ResponseEntity.status(HttpStatus.CREATED).body(&quot;You don't have power to add&quot;);</span>
+			}
+
+		}
+
+<span class="nc" id="L243">		catch (Exception e) {</span>
+<span class="nc" id="L244">			System.out.println(e);</span>
+<span class="nc" id="L245">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something Wrong&quot;);</span>
+<span class="nc" id="L246">		}</span>
+<span class="nc" id="L247">		return null;</span>
+
+	}
+
+	public ResponseEntity&lt;?&gt; bothTrue(SignUpRequest request) {
+<span class="nc" id="L252">		Recruiter recruiter = new Recruiter();</span>
+<span class="nc" id="L253">		Company company = new Company();</span>
+<span class="nc" id="L254">		var user = User.builder().userName(request.getUserName()).email(request.getEmail())</span>
+<span class="nc" id="L255">				.password(passwordEncoder.encode(&quot;123&quot;)).phoneNumber(request.getPhoneNumber()).role(Role.ROLE_HRADMIN)</span>
+<span class="nc" id="L256">				.build();</span>
+<span class="nc" id="L257">		user = userService.saveUser(user);</span>
+
+<span class="nc" id="L259">		recruiter.setAddedPower(true);</span>
+<span class="nc" id="L260">		recruiter.setApprovePower(true);</span>
+
+<span class="nc" id="L262">		recruiter.setAddedBy(request.getUserId());</span>
+<span class="nc" id="L263">		recruiter.setApprover(user.getUserId());</span>
+
+		/// setcompanyid from the getting hr admin company id
+
+<span class="nc" id="L267">		User user1 = new User();</span>
+<span class="nc" id="L268">		Recruiter recruiter1 = new Recruiter();</span>
+
+<span class="nc" id="L270">		user1 = userRepository.findById(request.getUserId()).get();</span>
+<span class="nc" id="L271">		recruiter1 = recruiterRepository.findByUser(user1);</span>
+<span class="nc" id="L272">		company.setCompanyId(recruiter1.getCompany().getCompanyId());</span>
+
+<span class="nc" id="L274">		recruiter.setCompany(company);</span>
+<span class="nc" id="L275">		recruiter.setUser(user);</span>
+
+<span class="nc" id="L277">		recruiter = recruiterService.recruiterRegistration(recruiter);</span>
+<span class="nc" id="L278">		return ResponseEntity.status(HttpStatus.CREATED).body(&quot;HR Admin Registered sucessfully&quot;);</span>
+	}
+
+	public ResponseEntity&lt;?&gt; oneTrue(SignUpRequest request) {
+<span class="nc" id="L282">		Recruiter recruiter = new Recruiter();</span>
+<span class="nc" id="L283">		Company company = new Company();</span>
+<span class="nc" id="L284">		User u = new User();</span>
+<span class="nc" id="L285">		long userId = request.getUserId();</span>
+<span class="nc" id="L286">		u = userRepository.findById(userId).get();</span>
+<span class="nc" id="L287">		long approver = u.getRecruiter().getApprover();</span>
+
+<span class="nc" id="L289">		var user = User.builder().userName(request.getUserName()).email(request.getEmail())</span>
+<span class="nc" id="L290">				.password(passwordEncoder.encode(&quot;123&quot;)).phoneNumber(request.getPhoneNumber()).role(Role.ROLE_RECRUITER)</span>
+<span class="nc" id="L291">				.build();</span>
+<span class="nc" id="L292">		user = userService.saveUser(user);</span>
+<span class="nc" id="L293">		recruiter.setAddedPower(true);</span>
+<span class="nc" id="L294">		recruiter.setApprovePower(false);</span>
+<span class="nc" id="L295">		recruiter.setAddedBy(request.getUserId());</span>
+<span class="nc" id="L296">		recruiter.setApprover(approver);</span>
+
+		/// setcompanyid from the getting hr admin company id
+
+<span class="nc" id="L300">		User user1 = new User();</span>
+<span class="nc" id="L301">		Recruiter recruiter1 = new Recruiter();</span>
+
+<span class="nc" id="L303">		user1 = userRepository.findById(request.getUserId()).get();</span>
+<span class="nc" id="L304">		recruiter1 = recruiterRepository.findByUser(user1);</span>
+<span class="nc" id="L305">		company.setCompanyId(recruiter1.getCompany().getCompanyId());</span>
+
+<span class="nc" id="L307">		recruiter.setCompany(company);</span>
+
+<span class="nc" id="L309">		recruiter.setUser(user);</span>
+<span class="nc" id="L310">		recruiter = recruiterService.recruiterRegistration(recruiter);</span>
+<span class="nc" id="L311">		return ResponseEntity.status(HttpStatus.CREATED).body(&quot;Recruiter Registered sucessfully&quot;);</span>
+	}
+
+	public ResponseEntity&lt;?&gt; bothFalse(SignUpRequest request) {
+<span class="nc" id="L315">		Recruiter recruiter = new Recruiter();</span>
+<span class="nc" id="L316">		Company company = new Company();</span>
+<span class="nc" id="L317">		User u = new User();</span>
+<span class="nc" id="L318">		long userId = request.getUserId();</span>
+<span class="nc" id="L319">		u = userRepository.findById(userId).get();</span>
+<span class="nc" id="L320">		long approver = u.getRecruiter().getApprover();</span>
+
+<span class="nc" id="L322">		var user = User.builder().userName(request.getUserName()).email(request.getEmail())</span>
+<span class="nc" id="L323">				.password(passwordEncoder.encode(&quot;123&quot;)).phoneNumber(request.getPhoneNumber()).role(Role.ROLE_RECRUITER)</span>
+<span class="nc" id="L324">				.build();</span>
+<span class="nc" id="L325">		user = userService.saveUser(user);</span>
+<span class="nc" id="L326">		recruiter.setAddedPower(false);</span>
+<span class="nc" id="L327">		recruiter.setApprovePower(false);</span>
+<span class="nc" id="L328">		recruiter.setAddedBy(request.getUserId());</span>
+<span class="nc" id="L329">		recruiter.setApprover(approver);</span>
+		/// setcompanyid from the getting hr admin company id
+
+<span class="nc" id="L332">		User user1 = new User();</span>
+<span class="nc" id="L333">		Recruiter recruiter1 = new Recruiter();</span>
+
+<span class="nc" id="L335">		user1 = userRepository.findById(request.getUserId()).get();</span>
+<span class="nc" id="L336">		recruiter1 = recruiterRepository.findByUser(user1);</span>
+<span class="nc" id="L337">		company.setCompanyId(recruiter1.getCompany().getCompanyId());</span>
+
+<span class="nc" id="L339">		recruiter.setCompany(company);</span>
+<span class="nc" id="L340">		recruiter.setUser(user);</span>
+<span class="nc" id="L341">		recruiter = recruiterService.recruiterRegistration(recruiter);</span>
+<span class="nc" id="L342">		return ResponseEntity.status(HttpStatus.CREATED).body(&quot;Recruiter Registered sucessfully&quot;);</span>
+
+	}
+
+	@Override
+	public ResponseEntity&lt;?&gt; ccrSignup(SignUpRequest request) {
+		try {
+<span class="nc" id="L349">			var user = User.builder().userName(request.getUserName()).email(request.getEmail())</span>
+<span class="nc" id="L350">					.password(passwordEncoder.encode(&quot;123&quot;)).phoneNumber(request.getPhoneNumber())</span>
+<span class="nc" id="L351">					.role(Role.ROLE_CCRADMIN).build();</span>
+<span class="nc" id="L352">			user = userService.saveUser(user);</span>
+<span class="nc" id="L353">			return ResponseEntity.status(HttpStatus.CREATED).body(&quot;CCR ADMIN Registered sucessfully&quot;);</span>
+<span class="nc" id="L354">		} catch (Exception e) {</span>
+<span class="nc" id="L355">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something Wrong&quot;);</span>
+		}
+
+	}
+
+	// OTP Forgot password
+
+	private Date calculateExpirationTime() {
+<span class="nc" id="L363">		Calendar calendar = Calendar.getInstance();</span>
+<span class="nc" id="L364">		calendar.add(Calendar.MINUTE, 3); // Add 3 minutes to the current time</span>
+<span class="nc" id="L365">		return calendar.getTime();</span>
+	}
+
+	public ResponseEntity&lt;String&gt; sendOtpByEmail(User user) {
+<span class="nc" id="L369">		Session session = entityManager.unwrap(Session.class);</span>
+
+<span class="nc" id="L371">		CriteriaBuilder cb = session.getCriteriaBuilder();</span>
+<span class="nc" id="L372">		CriteriaQuery&lt;User&gt; cr = cb.createQuery(User.class);</span>
+
+<span class="nc" id="L374">		Root&lt;User&gt; root = cr.from(User.class);</span>
+<span class="nc" id="L375">		cr.select(root).where(cb.equal(root.get(&quot;email&quot;), user.getEmail()));</span>
+
+<span class="nc" id="L377">		Query query = session.createQuery(cr);</span>
+
+<span class="nc" id="L379">		User retrievedUser = (User) query.getSingleResult();</span>
+<span class="nc" id="L380">		System.out.println(retrievedUser.getEmail());</span>
+
+<span class="nc bnc" id="L382" title="All 2 branches missed.">		if (retrievedUser != null) {</span>
+<span class="nc" id="L383">			int otp = generateOtp();</span>
+
+<span class="nc" id="L385">			Date expirationTime = calculateExpirationTime();</span>
+
+<span class="nc" id="L387">			retrievedUser.setUserOtp(otp);</span>
+<span class="nc" id="L388">			retrievedUser.setOtpExpiration(expirationTime);</span>
+
+<span class="nc" id="L390">			userRepository.save(retrievedUser);</span>
+<span class="nc" id="L391">			String i = retrievedUser.getEmail();</span>
+<span class="nc" id="L392">			System.out.println(i);</span>
+			try {
+<span class="nc" id="L394">				sendOtpEmail(i, otp);</span>
+<span class="nc" id="L395">			} catch (UnsupportedEncodingException e) {</span>
+
+<span class="nc" id="L397">				e.printStackTrace();</span>
+<span class="nc" id="L398">			} catch (MessagingException e) {</span>
+
+<span class="nc" id="L400">				e.printStackTrace();</span>
+<span class="nc" id="L401">			}</span>
+<span class="nc" id="L402">			session.close();</span>
+<span class="nc" id="L403">			return ResponseEntity.ok(&quot;OTP sent successfully&quot;);</span>
+
+		}
+
+<span class="nc" id="L407">		return null;</span>
+
+	}
+
+	private int generateOtp() {
+<span class="nc" id="L412">		int min = 10000;</span>
+<span class="nc" id="L413">		int max = 99999;</span>
+<span class="nc" id="L414">		int token = (int) (Math.random() * (max - min + 1) + min);</span>
+
+<span class="nc" id="L416">		return token;</span>
+	}
+
+	private void sendOtpEmail(String email, int otp) throws UnsupportedEncodingException, MessagingException {
+<span class="nc" id="L420">		MimeMessage message = javaMailSender.createMimeMessage();</span>
+<span class="nc" id="L421">		MimeMessageHelper helper = new MimeMessageHelper(message);</span>
+<span class="nc" id="L422">		helper.setFrom(&quot;yashporlekar8888@gmail.com&quot;, &quot;CCR&quot;);</span>
+<span class="nc" id="L423">		helper.setTo(email);</span>
+<span class="nc" id="L424">		String subject = &quot;Here's the link to reset your password&quot;;</span>
+<span class="nc" id="L425">		String content = &quot;&lt;p&gt;Hello ,&lt;/p&gt;&quot; + &quot;&lt;p&gt;You have requested to reset your password.&lt;/p&gt;&quot;</span>
+				+ &quot;&lt;p&gt;Here is your OTP: &quot; + otp + &quot;&lt;br&gt;&quot; + &quot;&lt;p&gt;Ignore this email if you do remember your password, &quot;
+				+ &quot;or you have not made the request.&lt;/p&gt;&quot;;
+<span class="nc" id="L428">		message.setSubject(subject);</span>
+<span class="nc" id="L429">		helper.setText(content, true);</span>
+<span class="nc" id="L430">		javaMailSender.send(message);</span>
+<span class="nc" id="L431">	}</span>
+
+	public ResponseEntity&lt;String&gt; userOtpValidation(User user) {
+<span class="nc" id="L434">		Session session = entityManager.unwrap(Session.class);</span>
+		try {
+<span class="nc" id="L436">			CriteriaBuilder cb = session.getCriteriaBuilder();</span>
+<span class="nc" id="L437">			CriteriaQuery&lt;User&gt; cr = cb.createQuery(User.class);</span>
+<span class="nc" id="L438">			Root&lt;User&gt; root = cr.from(User.class);</span>
+<span class="nc" id="L439">			cr.select(root).where(cb.equal(root.get(&quot;userOtp&quot;), user.getUserOtp()));</span>
+<span class="nc" id="L440">			Query query = session.createQuery(cr);</span>
+
+<span class="nc" id="L442">			User result = (User) query.getSingleResult();</span>
+
+<span class="nc bnc" id="L444" title="All 2 branches missed.">			if (result != null) {</span>
+<span class="nc" id="L445">				Date currentTimestamp = new Date(); // Current time</span>
+<span class="nc bnc" id="L446" title="All 2 branches missed.">				if (currentTimestamp.before(result.getOtpExpiration())) {</span>
+					// OTP is still valid, allow the password change
+					// Perform password change logic here using the 'result' object
+
+<span class="nc" id="L450">					session.close();</span>
+<span class="nc" id="L451">					return ResponseEntity.status(HttpStatus.OK).body(&quot;You Have Entered Correct OTP....&quot;);</span>
+				} else {
+					// OTP has expired
+
+<span class="nc" id="L455">					session.close();</span>
+<span class="nc" id="L456">					return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="nc" id="L457">							.body(&quot;OTP has expired. Please request a new OTP.&quot;);</span>
+				}
+			}
+
+//				session.close();
+//				return ResponseEntity.status(HttpStatus.OK).body(&quot;You Have Entered Correct OTP....&quot;);
+<span class="nc" id="L463">		} catch (Exception e) {</span>
+<span class="nc" id="L464">			session.close();</span>
+<span class="nc" id="L465">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Please Enter Correct OTP....&quot;);</span>
+<span class="nc" id="L466">		}</span>
+<span class="nc" id="L467">		return null;</span>
+
+	}
+
+	public ResponseEntity&lt;String&gt; userChangePassword(User user) {
+
+<span class="nc" id="L473">		Session session = entityManager.unwrap(Session.class);</span>
+		try {
+<span class="nc" id="L475">			CriteriaBuilder cb = session.getCriteriaBuilder();</span>
+<span class="nc" id="L476">			CriteriaQuery&lt;User&gt; cr = cb.createQuery(User.class);</span>
+
+<span class="nc" id="L478">			Root&lt;User&gt; root = cr.from(User.class);</span>
+<span class="nc" id="L479">			cr.select(root).where(cb.equal(root.get(&quot;email&quot;), user.getEmail()));</span>
+
+<span class="nc" id="L481">			Query query = session.createQuery(cr);</span>
+
+<span class="nc" id="L483">			User retrievedUser = (User) query.getSingleResult();</span>
+
+<span class="nc bnc" id="L485" title="All 2 branches missed.">			if (retrievedUser != null) {</span>
+<span class="nc" id="L486">				retrievedUser.setPassword(passwordEncoder.encode(user.getPassword()));</span>
+<span class="nc" id="L487">				retrievedUser.setUserOtp(null);</span>
+<span class="nc" id="L488">				userRepository.save(retrievedUser);</span>
+
+<span class="nc" id="L490">				session.close();</span>
+
+<span class="nc" id="L492">				return ResponseEntity.status(HttpStatus.CREATED).body(&quot;Password Changed Sucessfully&quot;);</span>
+			}
+
+<span class="nc" id="L495">		} catch (Exception e) {</span>
+<span class="nc" id="L496">			session.close();</span>
+<span class="nc" id="L497">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something wrong&quot;);</span>
+<span class="nc" id="L498">		}</span>
+<span class="nc" id="L499">		return null;</span>
+
+	}
+
+//	
+//	
+//	 public ResponseEntity&lt;?&gt; signout(String token) {
+//	        // Extract the token from the Authorization header.
+//		 
+//	
+//		String jwtToken = token.substring(7); // Remove &quot;Bearer &quot; prefix
+//System.out.println(&quot;Token is&quot;+jwtToken);
+//	        // Add the JWT token to the list of invalidated tokens.
+//	       
+//	        
+//
+//	        return ResponseEntity.ok(&quot;User successfully signed out.&quot;);
+//	    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

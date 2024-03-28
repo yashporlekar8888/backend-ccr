@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommentServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ccr-mvp</a> &gt; <a href="index.source.html" class="el_package">com.ccr.mvp.service.impl</a> &gt; <span class="el_source">CommentServiceImpl.java</span></div><h1>CommentServiceImpl.java</h1><pre class="source lang-java linenums">package com.ccr.mvp.service.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.hibernate.Session;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import com.ccr.mvp.model.CalculatedScore;
+import com.ccr.mvp.model.Candidate;
+import com.ccr.mvp.model.Comment;
+import com.ccr.mvp.model.Recruiter;
+import com.ccr.mvp.repository.CalculatedScoreRepository;
+import com.ccr.mvp.repository.CandidateRepository;
+import com.ccr.mvp.repository.CommentRepository;
+import com.ccr.mvp.service.CommentService;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Root;
+
+@Service
+<span class="fc" id="L31">public class CommentServiceImpl implements CommentService {</span>
+
+	@Autowired
+	private CommentRepository commentRepository;
+	@Autowired
+	private CandidateRepository candidateRepository;
+
+	@Autowired
+	CalculatedScoreRepository calculatedScoreRepository;
+	
+	@PersistenceContext
+	EntityManager entityManager;
+
+//	@Override
+//	public ResponseEntity&lt;?&gt; saveComment(Long candidateId, Long recruiterId, Comment comment) {
+//		try {
+//			Recruiter recruiter = new Recruiter();
+//			Candidate candidate = candidateRepository.findById(candidateId)
+//					.orElseThrow(() -&gt; new Exception(&quot;User not found with id: &quot; + candidateId));
+//
+//			comment.setCommentContent(comment.getCommentContent());
+//			comment.setCommentApprove(false);
+//			comment.setCommentSuggestion(false);
+//			recruiter.setRecruiterId(recruiterId);
+//			comment.setRecruiter(recruiter);
+//			comment.setCandidate(candidate);
+//			commentRepository.save(comment);
+//			
+//		} catch (Exception e) {
+//			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something wrong&quot;);
+//		}
+//		
+//		return null;
+//	}
+
+///////// Comments approval candidate
+	/*
+	 * public ResponseEntity&lt;?&gt; commentsapprove(long candidateId, long recruiterId,
+	 * String comment) { Comment comment1 = new Comment();
+	 * comment1.setCommentContent(comment); comment1.setCommentApprove(false);
+	 * 
+	 * Candidate candidate = new Candidate(); candidate.setCandidateId(candidateId);
+	 * comment1.setCandidate(candidate);
+	 * 
+	 * Recruiter recruiter = new Recruiter(); recruiter.setRecruiterId(recruiterId);
+	 * comment1.setRecruiter(recruiter);
+	 * 
+	 * commentRepository.save(comment1); return null; }
+	 */
+
+	public List&lt;Comment&gt; Newcommentrequest(long recruiterId) {
+
+<span class="nc" id="L83">		CriteriaBuilder cb1 = entityManager.getCriteriaBuilder();</span>
+<span class="nc" id="L84">		CriteriaQuery&lt;Recruiter&gt; cr1 = cb1.createQuery(Recruiter.class);</span>
+<span class="nc" id="L85">		Root&lt;Recruiter&gt; root1 = cr1.from(Recruiter.class);</span>
+
+<span class="nc" id="L87">		cr1.select(root1).where(cb1.equal(root1.get(&quot;approver&quot;), recruiterId));</span>
+<span class="nc" id="L88">		Query query1 = entityManager.createQuery(cr1);</span>
+
+<span class="nc" id="L90">		List&lt;Recruiter&gt; results1 = query1.getResultList();</span>
+
+<span class="nc" id="L92">		List&lt;Comment&gt; allComments = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">		for (Recruiter recruiter : results1) {</span>
+<span class="nc" id="L94">			List&lt;Comment&gt; recruiterComments = getRecruiterComments(recruiter.getRecruiterId());</span>
+<span class="nc" id="L95">			allComments.addAll(recruiterComments);</span>
+<span class="nc" id="L96">		}</span>
+
+<span class="nc" id="L98">		return allComments;</span>
+
+	}
+
+	public List&lt;Comment&gt; getRecruiterComments(long recruiterId) {
+<span class="nc" id="L103">		CriteriaBuilder cb2 = entityManager.getCriteriaBuilder();</span>
+<span class="nc" id="L104">		CriteriaQuery&lt;Comment&gt; cr2 = cb2.createQuery(Comment.class);</span>
+<span class="nc" id="L105">		Root&lt;Comment&gt; root2 = cr2.from(Comment.class);</span>
+
+<span class="nc" id="L107">		cr2.select(root2).where(cb2.equal(root2.get(&quot;recruiter&quot;).get(&quot;recruiterId&quot;), recruiterId),</span>
+<span class="nc" id="L108">				cb2.equal(root2.get(&quot;commentApprove&quot;), false),cb2.equal(root2.get(&quot;commentSuggestion&quot;), false));</span>
+<span class="nc" id="L109">		Query query2 = entityManager.createQuery(cr2);</span>
+
+<span class="nc" id="L111">		return query2.getResultList();</span>
+	}
+
+//public ResponseEntity&lt;?&gt; getcommentrequest(Comment comment) {
+//	Session session = entityManager.unwrap(Session.class);
+//	CriteriaBuilder cb = session.getCriteriaBuilder();
+//	CriteriaQuery&lt;Comment&gt; cr = cb.createQuery(Comment.class);
+//	Root&lt;Comment&gt; root = cr.from(Comment.class);
+//
+//	cr.select(root).where(cb.equal(root.get(&quot;comment_id&quot;), comment.getComment_id()));
+//	Query query = session.createQuery(cr);
+//	Comment results = null;
+//	results = (Comment) query.getSingleResult();
+//	String a = results.getComment();
+//	session.close();
+//	return ResponseEntity.status(HttpStatus.OK).body(a);
+//
+//}
+
+	public ResponseEntity&lt;?&gt; commentaccept(long commentId) {
+<span class="nc" id="L131">		Session session = entityManager.unwrap(Session.class);</span>
+<span class="nc" id="L132">		CriteriaBuilder cb = session.getCriteriaBuilder();</span>
+<span class="nc" id="L133">		CriteriaQuery&lt;Comment&gt; cr = cb.createQuery(Comment.class);</span>
+<span class="nc" id="L134">		Root&lt;Comment&gt; root = cr.from(Comment.class);</span>
+
+<span class="nc" id="L136">		Join&lt;Comment, Candidate&gt; candidateJoin = root.join(&quot;candidate&quot;);</span>
+<span class="nc" id="L137">		Join&lt;Comment, Recruiter&gt; hrJoin = root.join(&quot;recruiter&quot;);</span>
+
+<span class="nc" id="L139">		cr.select(root).where(cb.and(cb.equal(root.get(&quot;commentId&quot;), commentId)));</span>
+
+<span class="nc" id="L141">		Query query = session.createQuery(cr);</span>
+<span class="nc" id="L142">		Comment result = null;</span>
+		try {
+<span class="nc" id="L144">			result = (Comment) query.getSingleResult();</span>
+<span class="nc" id="L145">			result.setCommentApprove(true);</span>
+<span class="nc" id="L146">			commentRepository.save(result);</span>
+
+<span class="nc" id="L148">			return ResponseEntity.status(HttpStatus.OK).body(&quot;Comment is approved by HR admin.&quot;);</span>
+<span class="nc" id="L149">		} catch (NoResultException ex) {</span>
+<span class="nc" id="L150">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Comment not found.&quot;);</span>
+<span class="nc" id="L151">		} catch (Exception ex) {</span>
+<span class="nc" id="L152">			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L153">					.body(&quot;An error occurred while processing the request.&quot;);</span>
+		}
+	}
+
+	public ResponseEntity&lt;?&gt; commentsuggestion(long commentId, String suggestion) {
+<span class="nc" id="L158">		Session session = entityManager.unwrap(Session.class);</span>
+<span class="nc" id="L159">		CriteriaBuilder cb = session.getCriteriaBuilder();</span>
+<span class="nc" id="L160">		CriteriaQuery&lt;Comment&gt; cr = cb.createQuery(Comment.class);</span>
+<span class="nc" id="L161">		Root&lt;Comment&gt; root = cr.from(Comment.class);</span>
+
+<span class="nc" id="L163">		cr.select(root).where(cb.and(cb.equal(root.get(&quot;commentId&quot;), commentId)));</span>
+
+<span class="nc" id="L165">		Query query = session.createQuery(cr);</span>
+<span class="nc" id="L166">		Comment result = null;</span>
+		try {
+<span class="nc" id="L168">			result = (Comment) query.getSingleResult();</span>
+<span class="nc" id="L169">			result.setSuggestionContent(suggestion);</span>
+<span class="nc" id="L170">			result.setCommentSuggestion(true);</span>
+<span class="nc" id="L171">			commentRepository.save(result);</span>
+
+<span class="nc" id="L173">			return ResponseEntity.status(HttpStatus.OK).body(&quot;Suggestion Given Sucessfully&quot;);</span>
+<span class="nc" id="L174">		} catch (Exception ex) {</span>
+<span class="nc" id="L175">			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L176">					.body(&quot;An error occurred while processing the request.&quot;);</span>
+		}
+
+	}
+
+	public ResponseEntity&lt;?&gt; getsuggestion( long recruiterId) {
+<span class="nc" id="L182">		Session session = entityManager.unwrap(Session.class);</span>
+<span class="nc" id="L183">		CriteriaBuilder cb = session.getCriteriaBuilder();</span>
+<span class="nc" id="L184">		CriteriaQuery&lt;Comment&gt; cr = cb.createQuery(Comment.class);</span>
+<span class="nc" id="L185">		Root&lt;Comment&gt; root = cr.from(Comment.class);</span>
+
+<span class="nc" id="L187">		cr.select(root)</span>
+<span class="nc" id="L188">				.where(cb.and(cb.equal(root.get(&quot;recruiter&quot;).get(&quot;recruiterId&quot;), recruiterId),</span>
+<span class="nc" id="L189">						cb.equal(root.get(&quot;commentSuggestion&quot;), true)));</span>
+						
+
+<span class="nc" id="L192">		Query query = session.createQuery(cr);</span>
+<span class="nc" id="L193">		List&lt;Comment&gt; result = null;</span>
+		try {
+<span class="nc" id="L195">			result =  query.getResultList();</span>
+		
+
+<span class="nc" id="L198">			return ResponseEntity.status(HttpStatus.OK).body(result);</span>
+<span class="nc" id="L199">		} catch (Exception ex) {</span>
+<span class="nc" id="L200">			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L201">					.body(&quot;An error occurred while processing the request.&quot;);</span>
+		}
+
+	}
+
+	@Override
+	public ResponseEntity&lt;?&gt; newComment(long commentId, String comment) {
+<span class="nc" id="L208">		Session session = entityManager.unwrap(Session.class);</span>
+<span class="nc" id="L209">		CriteriaBuilder cb = session.getCriteriaBuilder();</span>
+<span class="nc" id="L210">		CriteriaQuery&lt;Comment&gt; cr = cb.createQuery(Comment.class);</span>
+<span class="nc" id="L211">		Root&lt;Comment&gt; root = cr.from(Comment.class);</span>
+
+<span class="nc" id="L213">		cr.select(root).where(cb.and(cb.equal(root.get(&quot;commentId&quot;), commentId)));</span>
+
+<span class="nc" id="L215">		Query query = session.createQuery(cr);</span>
+<span class="nc" id="L216">		Comment result = null;</span>
+		try {
+<span class="nc" id="L218">			result = (Comment) query.getSingleResult();</span>
+<span class="nc" id="L219">			result.setCommentContent(comment);</span>
+<span class="nc" id="L220">			result.setCommentSuggestion(false);</span>
+<span class="nc" id="L221">			commentRepository.save(result);</span>
+
+<span class="nc" id="L223">			return ResponseEntity.status(HttpStatus.OK).body(&quot;New comment added&quot;);</span>
+<span class="nc" id="L224">		} catch (Exception ex) {</span>
+<span class="nc" id="L225">			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L226">					.body(&quot;An error occurred while processing the request.&quot;);</span>
+		}
+	}
+
+	
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

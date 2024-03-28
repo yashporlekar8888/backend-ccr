@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CandidateServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ccr-mvp</a> &gt; <a href="index.source.html" class="el_package">com.ccr.mvp.service.impl</a> &gt; <span class="el_source">CandidateServiceImpl.java</span></div><h1>CandidateServiceImpl.java</h1><pre class="source lang-java linenums">package com.ccr.mvp.service.impl;
+
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.hibernate.Session;
+import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import com.ccr.mvp.controller.dao.CandidateInfo;
+import com.ccr.mvp.model.Answer;
+import com.ccr.mvp.model.Candidate;
+import com.ccr.mvp.model.Category;
+import com.ccr.mvp.model.CategoryAverageScoreDTO;
+import com.ccr.mvp.model.Question;
+import com.ccr.mvp.model.User;
+import com.ccr.mvp.repository.AnswerRepository;
+import com.ccr.mvp.repository.CalculatedScoreRepository;
+import com.ccr.mvp.repository.CandidateRepository;
+import com.ccr.mvp.repository.CategoryRepository;
+import com.ccr.mvp.repository.QuestionRepository;
+import com.ccr.mvp.repository.UserRepository;
+import com.ccr.mvp.service.CandidateService;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
+
+import org.springframework.mail.javamail.JavaMailSender;
+//import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+@Service
+<span class="fc" id="L45">public class CandidateServiceImpl implements CandidateService {</span>
+	@PersistenceContext
+	EntityManager entityManager;
+
+	@Autowired
+	CandidateRepository candidateRepository;
+
+	@Autowired
+	AnswerRepository answerRepository;
+
+	@Autowired
+	QuestionRepository questionRepository;
+
+	@Autowired
+	CategoryRepository categoryRepository;
+
+	@Autowired
+	CalculatedScoreRepository calculatedScoreRepository;
+
+	@Autowired
+	UserRepository userRepository;
+
+	@Autowired
+	private JavaMailSender javaMailSender;
+
+	// @Override
+	public Candidate candidateRegistration(Candidate candidate) {
+
+<span class="nc" id="L73">		candidateRepository.save(candidate);</span>
+<span class="nc" id="L74">		return candidate;</span>
+		// return ResponseEntity.status(HttpStatus.CREATED).body(&quot;Candidate Registered
+		// sucessfully&quot;);
+	}
+
+
+	@Override
+	public ResponseEntity&lt;?&gt; candidateListByAadhar(Long candidate_aadhar) {
+		try {
+
+<span class="nc" id="L84">			Session session = entityManager.unwrap(Session.class);</span>
+
+<span class="nc" id="L86">			CriteriaBuilder cb = session.getCriteriaBuilder();</span>
+<span class="nc" id="L87">			CriteriaQuery&lt;Object[]&gt; cr = cb.createQuery(Object[].class);</span>
+<span class="nc" id="L88">			Root&lt;Candidate&gt; root = cr.from(Candidate.class);</span>
+
+<span class="nc" id="L90">			Candidate candidate = candidateRepository.findCandidateByCandidateAadhar(candidate_aadhar);</span>
+<span class="nc" id="L91">			User user = candidate.getUser();</span>
+<span class="nc" id="L92">			User userData = userRepository.findByUserId(user.getUserId());</span>
+
+<span class="nc" id="L94">			String candidateEmail = userData.getEmail();</span>
+<span class="nc" id="L95">			String candidateName = userData.getUserName();</span>
+<span class="nc" id="L96">			session.close();</span>
+			// Create a DTO or response object to hold the selected data
+<span class="nc" id="L98">			CandidateInfo candidateInfo = new CandidateInfo();</span>
+<span class="nc" id="L99">			candidateInfo.setCandidateEmail(candidateEmail);</span>
+<span class="nc" id="L100">			candidateInfo.setCandidateName(candidateName);</span>
+<span class="nc" id="L101">			candidateInfo.setCandidateUserId(user.getUserId());</span>
+<span class="nc" id="L102">			return new ResponseEntity&lt;&gt;(candidateInfo, HttpStatus.OK);</span>
+
+<span class="nc" id="L104">		} catch (Exception E) {</span>
+<span class="nc" id="L105">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something wrong&quot;);</span>
+		}
+	}
+
+	@Override
+	public ResponseEntity&lt;?&gt; openCandidateprofileByAadhar(Long candidate_aadhar) {
+
+<span class="nc" id="L112">		Session session = entityManager.unwrap(Session.class);</span>
+<span class="nc" id="L113">		CriteriaBuilder cb = session.getCriteriaBuilder();</span>
+<span class="nc" id="L114">		CriteriaQuery&lt;Candidate&gt; cr = cb.createQuery(Candidate.class);</span>
+<span class="nc" id="L115">		Root&lt;Candidate&gt; root = cr.from(Candidate.class);</span>
+<span class="nc" id="L116">		cr.select(root).where(cb.equal(root.get(&quot;candidateAadhar&quot;), candidate_aadhar));</span>
+<span class="nc" id="L117">		Query&lt;Candidate&gt; query = session.createQuery(cr);</span>
+
+<span class="nc" id="L119">		Candidate result = query.getSingleResult();</span>
+
+<span class="nc" id="L121">		session.close();</span>
+
+<span class="nc" id="L123">		return new ResponseEntity&lt;&gt;(result, HttpStatus.OK);</span>
+	}
+
+	// Get Candidate's total Avg Score
+	@Override
+	public ResponseEntity&lt;?&gt; getCandidateAverageScore(User user) {
+		try {
+
+			/*
+			 * candidate = candidateRepository.findById(candidate.getCandidateId())
+			 * .orElseThrow(() -&gt; new Exception(&quot;Candidate not found with id: &quot;));
+			 * 
+			 * double avgscore = candidate.getCandidateAvgScore(); return
+			 * ResponseEntity.ok(avgscore);
+			 */
+<span class="nc" id="L138">			Candidate candidate = new Candidate();</span>
+<span class="nc" id="L139">			candidate= candidateRepository.findByUser(user);</span>
+//			long recruiterId=recruiter.getRecruiterId();
+			
+<span class="nc" id="L142">			candidate = candidateRepository.findById(candidate.getCandidateId())</span>
+<span class="nc" id="L143">					.orElseThrow(() -&gt; new Exception(&quot;Candidate not found with id: &quot;));</span>
+
+<span class="nc" id="L145">			List&lt;Answer&gt; answers = answerRepository.findByCandidate(candidate);</span>
+<span class="nc" id="L146">			Map&lt;Category, Double&gt; averageScoresByCategory = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L147">			List&lt;CategoryAverageScoreDTO&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L149">			double AvgScore = 0.0;</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">			for (Answer ans : answers) {</span>
+<span class="nc" id="L151">				List&lt;Answer&gt; answersInCategory = answers.stream().filter(</span>
+<span class="nc bnc" id="L152" title="All 4 branches missed.">						answer -&gt; answer.getCategory() != null &amp;&amp; answer.getCategory().equals(ans.getCategory()))</span>
+<span class="nc" id="L153">						.collect(Collectors.toList());</span>
+<span class="nc" id="L154">				double totalWeightedScore1 = 0.0;</span>
+
+<span class="nc" id="L156">				double categoryScore = ans.getCategory().getCategoryWeightage();</span>
+<span class="nc" id="L157">				double weightForNa = 0.0;</span>
+
+<span class="nc" id="L159">				int totalRecords1 = answersInCategory.size();</span>
+<span class="nc" id="L160">				Category category = ans.getCategory();</span>
+
+<span class="nc" id="L162">				List&lt;Question&gt; questionsInCategory = questionRepository.findByCategory(category);</span>
+
+<span class="nc" id="L164">				int totalQuestions1 = questionsInCategory.size();</span>
+
+<span class="nc bnc" id="L166" title="All 2 branches missed.">				for (Answer answerInCat : answersInCategory) {</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">					if (&quot;Yes&quot;.equals(answerInCat.getAnswerResponse())) {</span>
+<span class="nc" id="L168">						totalWeightedScore1 += getQuestionWeightage(answerInCat.getQuestion());</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">					} else if (&quot;No&quot;.equals(answerInCat.getAnswerResponse())) {</span>
+<span class="nc" id="L170">						continue;</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">					} else if (&quot;NA&quot;.equals(answerInCat.getAnswerResponse())) {</span>
+<span class="nc" id="L172">						weightForNa += getQuestionWeightage(answerInCat.getQuestion());</span>
+
+					}
+<span class="nc" id="L175">				}</span>
+
+
+				//previous code
+				//double z = totalRecords1 / totalQuestions1;
+				
+				//solution given by sonarqube
+<span class="nc" id="L182">				double z = (double) totalRecords1 / totalQuestions1;</span>
+
+
+				// Calculate the average score
+<span class="nc" id="L186">				double a = categoryScore * z;</span>
+<span class="nc" id="L187">				a -= weightForNa;</span>
+
+				// double a = categoryScore / totalQuestions1 * totalRecords1;
+<span class="nc" id="L190">				double CateAvgScore = Math.round((100 * totalWeightedScore1) / a);</span>
+
+<span class="nc" id="L192">				averageScoresByCategory.put(ans.getCategory(), CateAvgScore);</span>
+
+<span class="nc" id="L194">			}</span>
+
+			// Loop through the map entries and add them to the list
+<span class="nc bnc" id="L197" title="All 2 branches missed.">			for (Map.Entry&lt;Category, Double&gt; entry : averageScoresByCategory.entrySet()) {</span>
+
+<span class="nc" id="L199">				Double averageScorecate = entry.getValue();</span>
+<span class="nc" id="L200">				AvgScore = AvgScore + averageScorecate;</span>
+
+<span class="nc" id="L202">			}</span>
+
+<span class="nc" id="L204">			int CategorySize = (int) categoryRepository.count();</span>
+
+<span class="nc" id="L206">			double AvgScore1 = Math.round(AvgScore / CategorySize);</span>
+
+<span class="nc" id="L208">			return ResponseEntity.ok(AvgScore1);</span>
+
+<span class="nc" id="L210">		} catch (Exception e) {</span>
+<span class="nc" id="L211">			System.out.println(e);</span>
+<span class="nc" id="L212">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something wrong&quot;);</span>
+		}
+	}
+
+//	Get avg score for a candidate category wise
+	@Override
+	public ResponseEntity&lt;?&gt; getCandidateAverageScoreCategory(User user) {
+		try {
+			
+<span class="nc" id="L221">			Candidate candidate = new Candidate();</span>
+<span class="nc" id="L222">			candidate= candidateRepository.findByUser(user);</span>
+			
+<span class="nc" id="L224">			candidate = candidateRepository.findById(candidate.getCandidateId())</span>
+<span class="nc" id="L225">					.orElseThrow(() -&gt; new Exception(&quot;Candidate not found with id: &quot;));</span>
+
+<span class="nc" id="L227">			List&lt;Answer&gt; answers = answerRepository.findByCandidate(candidate);</span>
+<span class="nc" id="L228">			Map&lt;Category, Double&gt; averageScoresByCategory = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L229">			List&lt;CategoryAverageScoreDTO&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L231" title="All 2 branches missed.">			for (Answer ans : answers) {</span>
+<span class="nc" id="L232">				List&lt;Answer&gt; answersInCategory = answers.stream().filter(</span>
+<span class="nc bnc" id="L233" title="All 4 branches missed.">						answer -&gt; answer.getCategory() != null &amp;&amp; answer.getCategory().equals(ans.getCategory()))</span>
+<span class="nc" id="L234">						.collect(Collectors.toList());</span>
+<span class="nc" id="L235">				double totalWeightedScore1 = 0.0;</span>
+<span class="nc" id="L236">				double totalScore = 100.0;</span>
+<span class="nc" id="L237">				double categoryScore = ans.getCategory().getCategoryWeightage();</span>
+<span class="nc" id="L238">				double weightForNa = 0.0;</span>
+<span class="nc" id="L239">				double questionWeitage = ans.getQuestion().getWeightage();</span>
+<span class="nc" id="L240">				int totalRecords1 = answersInCategory.size();</span>
+<span class="nc" id="L241">				Category category = ans.getCategory();</span>
+
+<span class="nc" id="L243">				List&lt;Question&gt; questionsInCategory = questionRepository.findByCategory(category);</span>
+
+<span class="nc" id="L245">				int totalQuestions1 = questionsInCategory.size();</span>
+
+<span class="nc bnc" id="L247" title="All 2 branches missed.">				for (Answer answerInCat : answersInCategory) {</span>
+<span class="nc bnc" id="L248" title="All 2 branches missed.">					if (&quot;Yes&quot;.equals(answerInCat.getAnswerResponse())) {</span>
+<span class="nc" id="L249">						totalWeightedScore1 += getQuestionWeightage(answerInCat.getQuestion());</span>
+<span class="nc bnc" id="L250" title="All 2 branches missed.">					} else if (&quot;No&quot;.equals(answerInCat.getAnswerResponse())) {</span>
+<span class="nc" id="L251">						continue;</span>
+<span class="nc bnc" id="L252" title="All 2 branches missed.">					} else if (&quot;NA&quot;.equals(answerInCat.getAnswerResponse())) {</span>
+<span class="nc" id="L253">						weightForNa += getQuestionWeightage(answerInCat.getQuestion());</span>
+						// totalRecords1--;
+					}
+<span class="nc" id="L256">				}</span>
+
+//				double z = totalRecords1 / totalQuestions1;
+				//sonarqube suggestion
+<span class="nc" id="L260">				double z = (double) totalRecords1 / totalQuestions1;</span>
+
+				
+				// Calculate the average score
+<span class="nc" id="L264">				double a = categoryScore * z;</span>
+<span class="nc" id="L265">				a -= weightForNa;</span>
+
+				// double a = categoryScore / totalQuestions1 * totalRecords1;
+<span class="nc" id="L268">				double CateAvgScore = Math.round((100 * totalWeightedScore1) / a);</span>
+
+<span class="nc" id="L270">				averageScoresByCategory.put(ans.getCategory(), CateAvgScore);</span>
+<span class="nc" id="L271">				result.add(new CategoryAverageScoreDTO(ans.getCategory().getCategoryId(),</span>
+<span class="nc" id="L272">						ans.getCategory().getCategoryName(), CateAvgScore));</span>
+<span class="nc" id="L273">			}</span>
+<span class="nc" id="L274">			List&lt;CategoryAverageScoreDTO&gt; responseDTOList = new ArrayList&lt;&gt;();</span>
+			// Loop through the map entries and add them to the list
+<span class="nc bnc" id="L276" title="All 2 branches missed.">			for (Map.Entry&lt;Category, Double&gt; entry : averageScoresByCategory.entrySet()) {</span>
+<span class="nc" id="L277">				long categoryId = entry.getKey().getCategoryId();</span>
+<span class="nc" id="L278">				String categoryName = entry.getKey().getCategoryName();</span>
+<span class="nc" id="L279">				Double averageScorecate = entry.getValue();</span>
+<span class="nc" id="L280">				responseDTOList.add(new CategoryAverageScoreDTO(categoryId, categoryName, averageScorecate));</span>
+<span class="nc" id="L281">			}</span>
+<span class="nc" id="L282">			return ResponseEntity.ok(responseDTOList);</span>
+
+<span class="nc" id="L284">		} catch (Exception e) {</span>
+<span class="nc" id="L285">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something wrong&quot;);</span>
+		}
+	}
+
+	// Common method for getting the weightage of a question by questionId (Long)
+	private double getQuestionWeightage(Question question) {
+<span class="nc" id="L291">		List&lt;Question&gt; questions = questionRepository.findByQuestionId(question.getQuestionId());</span>
+<span class="nc" id="L292">		double questionWeightage = 0.0;</span>
+<span class="nc bnc" id="L293" title="All 2 branches missed.">		for (Question questionObj : questions) {</span>
+<span class="nc" id="L294">			questionWeightage = questionObj.getWeightage();</span>
+<span class="nc" id="L295">		}</span>
+<span class="nc" id="L296">		return questionWeightage;</span>
+	}
+
+	public Double getCategoryWeightage(Long categoryId) {
+<span class="nc" id="L300">		Category category = categoryRepository.findById(categoryId)</span>
+<span class="nc" id="L301">				.orElseThrow(() -&gt; new RuntimeException(&quot;Category not found with ID: &quot; + categoryId));</span>
+<span class="nc" id="L302">		return category.getCategoryWeightage();</span>
+	}
+
+
+	@Override
+	public ResponseEntity&lt;?&gt; getAllCandidateList() {
+<span class="nc" id="L308">		List&lt;Candidate&gt; allCandidateList = candidateRepository.findAll();</span>
+<span class="nc" id="L309">		return ResponseEntity.ok(allCandidateList);</span>
+	}
+
+	// OTP Forgot password
+//
+//	private Date calculateExpirationTime() {
+//		Calendar calendar = Calendar.getInstance();
+//		calendar.add(Calendar.MINUTE, 3); // Add 1 minutes to the current time
+//		return calendar.getTime();
+//	}
+//
+//	public ResponseEntity&lt;String&gt; sendOtpByEmail(Candidate candidate) {
+////			System.out.println(candidate.getCandidateEmail());
+//
+//		Session session = entityManager.unwrap(Session.class);
+//
+//		CriteriaBuilder cb = session.getCriteriaBuilder();
+//		CriteriaQuery&lt;Candidate&gt; cr = cb.createQuery(Candidate.class);
+//
+//		Root&lt;Candidate&gt; root = cr.from(Candidate.class);
+//		// cr.select(root).where(cb.equal(root.get(&quot;candidateEmail&quot;),
+//		// candidate.getCandidateEmail()));
+//
+//		Query query = session.createQuery(cr);
+//
+//		Candidate retrievedCandidate = (Candidate) query.getSingleResult();
+//
+//		if (retrievedCandidate != null) {
+//			int otp = generateOtp();
+//			// int storingotp=candidate.getCandidate_otp();
+//			// System.out.println(storingotp);
+//			Date expirationTime = calculateExpirationTime();
+//
+//			retrievedCandidate.setCandidateOtp(otp);
+//			retrievedCandidate.setOtpExpiration(expirationTime);
+//
+//			candidateRepository.save(retrievedCandidate);
+//			/*
+//			 * String i = retrievedCandidate.getCandidateEmail();
+//			 * 
+//			 * try { sendOtpEmail(i, otp); } catch (UnsupportedEncodingException e) { //
+//			 * TODO Auto-generated catch block e.printStackTrace(); } catch
+//			 * (MessagingException e) { // TODO Auto-generated catch block
+//			 * e.printStackTrace(); }
+//			 */
+//			session.close();
+//
+//			return ResponseEntity.ok(&quot;OTP sent successfully&quot;);
+//
+//		}
+//
+//		return null;
+//
+//	}
+//
+//	private int generateOtp() {
+//		int min = 10000;
+//		int max = 99999;
+//		int token = (int) (Math.random() * (max - min + 1) + min);
+//
+//		return token;
+//	}
+//
+//	private void sendOtpEmail(String email, int otp) throws UnsupportedEncodingException, MessagingException {
+//		MimeMessage message = javaMailSender.createMimeMessage();
+//		MimeMessageHelper helper = new MimeMessageHelper(message);
+//		helper.setFrom(&quot;yashporlekar8888@gmail.com&quot;, &quot;CCR&quot;);
+//		helper.setTo(email);
+//		String subject = &quot;Here's the link to reset your password&quot;;
+//		String content = &quot;&lt;p&gt;Hello ,&lt;/p&gt;&quot; + &quot;&lt;p&gt;You have requested to reset your password.&lt;/p&gt;&quot;
+//				+ &quot;&lt;p&gt;Here is your OTP: &quot; + otp + &quot;&lt;br&gt;&quot; + &quot;&lt;p&gt;Ignore this email if you do remember your password, &quot;
+//				+ &quot;or you have not made the request.&lt;/p&gt;&quot;;
+//		message.setSubject(subject);
+//		helper.setText(content, true);
+//		javaMailSender.send(message);
+//	}
+//
+//	public ResponseEntity&lt;String&gt; candchangepassforgot(Candidate candidate) {
+//		Session session = entityManager.unwrap(Session.class);
+//		try {
+//			CriteriaBuilder cb = session.getCriteriaBuilder();
+//			CriteriaQuery&lt;Candidate&gt; cr = cb.createQuery(Candidate.class);
+//			Root&lt;Candidate&gt; root = cr.from(Candidate.class);
+//			cr.select(root).where(cb.equal(root.get(&quot;candidateOtp&quot;), candidate.getCandidateOtp()));
+//			Query query = session.createQuery(cr);
+//
+//			Candidate result = (Candidate) query.getSingleResult();
+//
+//			if (result != null) {
+//				Date currentTimestamp = new Date(); // Current time
+//				if (currentTimestamp.before(result.getOtpExpiration())) {
+//					// OTP is still valid, allow the password change
+//					// Perform password change logic here using the 'result' object
+//
+//					session.close();
+//					return ResponseEntity.status(HttpStatus.OK).body(&quot;You Have Entered Correct OTP....&quot;);
+//				} else {
+//					// OTP has expired
+//					session.close();
+//					return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//							.body(&quot;OTP has expired. Please request a new OTP.&quot;);
+//				}
+//			}
+//
+////				session.close();
+////				return ResponseEntity.status(HttpStatus.OK).body(&quot;You Have Entered Correct OTP....&quot;);
+//		} catch (Exception e) {
+//			session.close();
+//			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Please Enter Correct OTP....&quot;);
+//		}
+//		return null;
+//
+//	}
+//
+//	public ResponseEntity&lt;String&gt; finalcandchangepass(Candidate candidate) {
+//
+//		Session session = entityManager.unwrap(Session.class);
+//		try {
+//			CriteriaBuilder cb = session.getCriteriaBuilder();
+//			CriteriaQuery&lt;Candidate&gt; cr = cb.createQuery(Candidate.class);
+//
+//			Root&lt;Candidate&gt; root = cr.from(Candidate.class);
+//			// cr.select(root).where(cb.equal(root.get(&quot;candidateEmail&quot;),
+//			// candidate.getCandidateEmail()));
+//
+//			Query query = session.createQuery(cr);
+//
+//			Candidate retrievedCandidate = (Candidate) query.getSingleResult();
+//
+//			if (retrievedCandidate != null) {
+//				// retrievedCandidate.setCandidatePassword(candidate.getCandidatePassword());
+//				candidateRepository.save(retrievedCandidate);
+//
+//				session.close();
+//
+//				return ResponseEntity.status(HttpStatus.CREATED).body(&quot;Password Changed Sucessfully&quot;);
+//			}
+//
+//		} catch (Exception e) {
+//			session.close();
+//			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something wrong&quot;);
+//		}
+//		return null;
+//
+//	}
+	/*	@Override
+		public ResponseEntity&lt;?&gt; getAllanswer(Long candidateId) {
+		 Optional&lt;Candidate&gt; candidateOptional = candidateRepository.findById(candidateId);
+		 List&lt;Answer&gt;answers= new ArrayList&lt;&gt;();
+		        if (candidateOptional.isPresent()) {
+		            Candidate candidate = candidateOptional.get();
+		            answers= candidate.getAnswer() ;
+		            return ResponseEntity.status(HttpStatus.CREATED).body(answers);
+		        } else {
+		        	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something wrong&quot;);
+		        }
+
+		return null;
+
+	}*/
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

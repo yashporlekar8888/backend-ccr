@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommentController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ccr-mvp</a> &gt; <a href="index.source.html" class="el_package">com.ccr.mvp.controller</a> &gt; <span class="el_source">CommentController.java</span></div><h1>CommentController.java</h1><pre class="source lang-java linenums">package com.ccr.mvp.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.ccr.mvp.model.Comment;
+import com.ccr.mvp.model.Recruiter;
+import com.ccr.mvp.repository.CandidateRepository;
+import com.ccr.mvp.repository.CommentRepository;
+import com.ccr.mvp.service.CommentService;
+
+@CrossOrigin(origins = &quot;*&quot;)
+@RestController
+<span class="fc" id="L23">public class CommentController {</span>
+
+	@Autowired
+	CommentRepository commentRepository;
+
+	@Autowired
+	CandidateRepository canidateRepository;
+
+	@Autowired
+	CommentService commentService;
+	
+	
+//	//Comment in rating form
+//	@PostMapping(&quot;/submitComment&quot;)
+//&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+//	public ResponseEntity&lt;?&gt; submitComment(@RequestBody Comment comment, @RequestParam Long candidateId,
+//			@RequestParam Long recruiterId) {
+//=======
+//	@PreAuthorize(&quot;hasAnyRole('HRADMIN','RECRUITER')&quot;)
+//	public ResponseEntity&lt;?&gt; submitComment(@RequestBody Comment comment, @RequestParam Long candidateId,@RequestParam Long recruiterId) {
+//&gt;&gt;&gt;&gt;&gt;&gt;&gt; 9feb7f99470ae4df7d84851e84ac566d47e40588
+//		commentService.saveComment(candidateId, recruiterId, comment);
+//		return ResponseEntity.ok(&quot;Comment submitted successfully&quot;);
+//	}
+
+
+///// get hr request for approval to hradmin
+	@GetMapping(&quot;/Newcommentrequest&quot;)
+	public List&lt;Comment&gt; Newcommentrequest(@RequestParam long recruiterId) {
+<span class="nc" id="L52">		return commentService.Newcommentrequest(recruiterId);</span>
+	}
+
+
+/////// comment approved by hr admin
+	@PostMapping(&quot;/commentaccept&quot;)
+	public ResponseEntity&lt;?&gt; commentaccept(@RequestParam long commentId) {
+<span class="nc" id="L59">		return commentService.commentaccept(commentId);</span>
+	}
+
+/////// given suggestion by hr admin to recruiter to change comment
+	@PostMapping(&quot;/commentsuggestion&quot;)
+	public ResponseEntity&lt;?&gt; commentsuggestion(@RequestParam long commentId, @RequestParam String suggestion) {
+<span class="nc" id="L65">		return commentService.commentsuggestion(commentId, suggestion);</span>
+	}
+
+/////// after giving suggestion the update comment request will go to the recruiter
+	@GetMapping(&quot;/suggestionFromHradmin&quot;)
+	public ResponseEntity&lt;?&gt; getsuggestion(@RequestParam long recruiterId) {
+<span class="nc" id="L71">		return commentService.getsuggestion(recruiterId);</span>
+	}
+	
+/////// New comment after hr admin suggestion
+	@PostMapping(&quot;/newComment&quot;)
+	public ResponseEntity&lt;?&gt; newComment(@RequestParam long commentId, @RequestParam String comment) {
+<span class="nc" id="L77">		return commentService.newComment(commentId,comment);</span>
+	}
+
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

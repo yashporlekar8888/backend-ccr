@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RecruiterServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ccr-mvp</a> &gt; <a href="index.source.html" class="el_package">com.ccr.mvp.service.impl</a> &gt; <span class="el_source">RecruiterServiceImpl.java</span></div><h1>RecruiterServiceImpl.java</h1><pre class="source lang-java linenums">package com.ccr.mvp.service.impl;
+
+import java.awt.print.Pageable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import com.ccr.mvp.controller.dao.CandidateDetailsDto;
+import com.ccr.mvp.model.Answer;
+import com.ccr.mvp.model.Candidate;
+import com.ccr.mvp.model.Category;
+import com.ccr.mvp.model.CategoryAverageScoreDTO;
+import com.ccr.mvp.model.Question;
+import com.ccr.mvp.model.ReceiverUpdates;
+import com.ccr.mvp.model.Recruiter;
+import com.ccr.mvp.model.Role;
+import com.ccr.mvp.model.Updates;
+import com.ccr.mvp.model.User;
+import com.ccr.mvp.repository.AnswerRepository;
+import com.ccr.mvp.repository.CalculatedScoreRepository;
+import com.ccr.mvp.repository.CandidateRepository;
+import com.ccr.mvp.repository.CategoryRepository;
+import com.ccr.mvp.repository.CompanyRepository;
+import com.ccr.mvp.repository.QuestionRepository;
+import com.ccr.mvp.repository.ReceiverUpdatesRepository;
+import com.ccr.mvp.repository.RecruiterRepository;
+import com.ccr.mvp.repository.UpdatesRepository;
+import com.ccr.mvp.repository.UserRepository;
+import com.ccr.mvp.service.RecruiterService;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
+@Service
+<span class="fc" id="L45">public class RecruiterServiceImpl implements RecruiterService {</span>
+
+	@PersistenceContext
+	EntityManager entityManager;
+	@Autowired
+	CategoryRepository categoryRepository;
+
+	@Autowired
+	CandidateRepository candidateRepository;
+	@Autowired
+	AnswerRepository answerRepository;
+	@Autowired
+	CalculatedScoreRepository calculatedScoreRepository;
+
+	@Autowired
+	QuestionRepository questionRepository;
+
+	@Autowired
+	RecruiterRepository recruiterRepository;
+
+	@Autowired
+	CompanyRepository companyRepository;
+
+	@Autowired
+	UserRepository userRepository;
+
+	@Autowired
+	UpdatesRepository updatesRepository;
+
+	@Autowired
+	ReceiverUpdatesRepository receiverUpdatesRepository;
+
+	@Override
+	public List&lt;Question&gt; getAllQuestion() {
+<span class="nc" id="L79">		return questionRepository.findAll();</span>
+	}
+
+	@Override
+	public ResponseEntity&lt;?&gt; getCandidateScoreRecruiter(Candidate candidate) {
+
+		try {
+<span class="nc" id="L86">			candidate = candidateRepository.findById(candidate.getCandidateId())</span>
+<span class="nc" id="L87">					.orElseThrow(() -&gt; new Exception(&quot;Candidate not found with id: &quot;));</span>
+
+<span class="nc" id="L89">			List&lt;Answer&gt; answers = answerRepository.findByCandidate(candidate);</span>
+<span class="nc" id="L90">			Map&lt;Category, Double&gt; averageScoresByCategory = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L91">			List&lt;CategoryAverageScoreDTO&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L93">			double AvgScore = 0.0;</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">			for (Answer ans : answers) {</span>
+<span class="nc" id="L95">				List&lt;Answer&gt; answersInCategory = answers.stream().filter(</span>
+<span class="nc bnc" id="L96" title="All 4 branches missed.">						answer -&gt; answer.getCategory() != null &amp;&amp; answer.getCategory().equals(ans.getCategory()))</span>
+<span class="nc" id="L97">						.collect(Collectors.toList());</span>
+<span class="nc" id="L98">				double totalWeightedScore1 = 0.0;</span>
+<span class="nc" id="L99">				double totalScore = 100.0;</span>
+<span class="nc" id="L100">				double categoryScore = ans.getCategory().getCategoryWeightage();</span>
+<span class="nc" id="L101">				double weightForNa = 0.0;</span>
+<span class="nc" id="L102">				double questionWeitage = ans.getQuestion().getWeightage();</span>
+<span class="nc" id="L103">				int totalRecords1 = answersInCategory.size();</span>
+<span class="nc" id="L104">				Category category = ans.getCategory();</span>
+
+<span class="nc" id="L106">				List&lt;Question&gt; questionsInCategory = questionRepository.findByCategory(category);</span>
+
+<span class="nc" id="L108">				int totalQuestions1 = questionsInCategory.size();</span>
+
+<span class="nc bnc" id="L110" title="All 2 branches missed.">				for (Answer answerInCat : answersInCategory) {</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">					if (&quot;Yes&quot;.equals(answerInCat.getAnswerResponse())) {</span>
+<span class="nc" id="L112">						totalWeightedScore1 += getQuestionWeightage(answerInCat.getQuestion());</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">					} else if (&quot;No&quot;.equals(answerInCat.getAnswerResponse())) {</span>
+<span class="nc" id="L114">						continue;</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">					} else if (&quot;NA&quot;.equals(answerInCat.getAnswerResponse())) {</span>
+<span class="nc" id="L116">						weightForNa += getQuestionWeightage(answerInCat.getQuestion());</span>
+						// totalRecords1--;
+					}
+<span class="nc" id="L119">				}</span>
+
+<span class="nc" id="L121">				double z = totalRecords1 / totalQuestions1;</span>
+
+				// Calculate the average score
+<span class="nc" id="L124">				double a = categoryScore * z;</span>
+<span class="nc" id="L125">				a -= weightForNa;</span>
+
+				// double a = categoryScore / totalQuestions1 * totalRecords1;
+<span class="nc" id="L128">				double CateAvgScore = Math.round((100 * totalWeightedScore1) / a);</span>
+
+<span class="nc" id="L130">				averageScoresByCategory.put(ans.getCategory(), CateAvgScore);</span>
+
+<span class="nc" id="L132">			}</span>
+
+			// Loop through the map entries and add them to the list
+<span class="nc bnc" id="L135" title="All 2 branches missed.">			for (Map.Entry&lt;Category, Double&gt; entry : averageScoresByCategory.entrySet()) {</span>
+
+<span class="nc" id="L137">				Double averageScorecate = entry.getValue();</span>
+<span class="nc" id="L138">				AvgScore = AvgScore + averageScorecate;</span>
+
+<span class="nc" id="L140">			}</span>
+
+<span class="nc" id="L142">			int CategorySize = (int) categoryRepository.count();</span>
+
+<span class="nc" id="L144">			double AvgScore1 = Math.round(AvgScore / CategorySize);</span>
+
+<span class="nc" id="L146">			candidate.setCandidateAvgScore(AvgScore1);</span>
+<span class="nc" id="L147">			candidateRepository.save(candidate);</span>
+
+<span class="nc" id="L149">			return null;</span>
+<span class="nc" id="L150">		} catch (Exception e) {</span>
+<span class="nc" id="L151">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something wrong&quot;);</span>
+		}
+
+	}
+
+	private double getQuestionWeightage(Question question) {
+<span class="nc" id="L157">		List&lt;Question&gt; questions = questionRepository.findByQuestionId(question.getQuestionId());</span>
+<span class="nc" id="L158">		double questionWeightage = 0.0;</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">		for (Question questionObj : questions) {</span>
+<span class="nc" id="L160">			questionWeightage = questionObj.getWeightage();</span>
+<span class="nc" id="L161">		}</span>
+<span class="nc" id="L162">		return questionWeightage;</span>
+	}
+
+	public List&lt;Recruiter&gt; getEmployeeHierarchy(Integer managerId) {
+<span class="nc" id="L166">		List&lt;Recruiter&gt; allEmployees = recruiterRepository.findAll();</span>
+<span class="nc" id="L167">		List&lt;Recruiter&gt; hierarchy = new ArrayList&lt;&gt;();</span>
+
+		// Find the manager based on managerId
+
+<span class="nc" id="L171">		Recruiter manager = allEmployees.stream().filter(hr -&gt; hr.getRecruiterId().equals(managerId)).findFirst()</span>
+<span class="nc" id="L172">				.orElse(null);</span>
+<span class="nc" id="L173">		System.out.println(manager);</span>
+
+<span class="nc bnc" id="L175" title="All 2 branches missed.">		if (manager != null) {</span>
+<span class="nc" id="L176">			buildEmployeeHierarchy(manager, allEmployees, hierarchy);</span>
+		}
+
+<span class="nc" id="L179">		return hierarchy;</span>
+	}
+
+	private void buildEmployeeHierarchy(Recruiter employee, List&lt;Recruiter&gt; allEmployees, List&lt;Recruiter&gt; hierarchy) {
+<span class="nc" id="L183">		List&lt;Recruiter&gt; subordinates = allEmployees.stream()</span>
+<span class="nc" id="L184">				.filter(hr -&gt; hr.getAddedBy().equals(employee.getRecruiterId())).collect(Collectors.toList());</span>
+
+<span class="nc bnc" id="L186" title="All 2 branches missed.">		for (Recruiter subordinate : subordinates) {</span>
+<span class="nc" id="L187">			hierarchy.add(subordinate);</span>
+<span class="nc" id="L188">		}</span>
+
+<span class="nc bnc" id="L190" title="All 2 branches missed.">		for (Recruiter subordinate : subordinates) {</span>
+<span class="nc" id="L191">			buildEmployeeHierarchy(subordinate, allEmployees, hierarchy);</span>
+<span class="nc" id="L192">		}</span>
+<span class="nc" id="L193">	}</span>
+
+	@Override
+	public Recruiter hrAdminRegistration(Recruiter hrRecruiter) {
+<span class="nc" id="L197">		recruiterRepository.save(hrRecruiter);</span>
+<span class="nc" id="L198">		return hrRecruiter;</span>
+	}
+
+	@Override
+	public Recruiter recruiterRegistration(Recruiter recruiter) {
+<span class="nc" id="L203">		recruiterRepository.save(recruiter);</span>
+<span class="nc" id="L204">		return recruiter;</span>
+	}
+
+	@Override
+	public ResponseEntity&lt;?&gt; updatePowers(Recruiter recruiter, long userId) {
+
+		try {
+
+<span class="nc" id="L212">			User user = new User();</span>
+<span class="nc" id="L213">			Recruiter recruiter1 = new Recruiter();</span>
+<span class="nc" id="L214">			Updates updates = new Updates();</span>
+<span class="nc" id="L215">			ReceiverUpdates receiverUpdates = new ReceiverUpdates();</span>
+
+<span class="nc" id="L217">			user = userRepository.findByemail(recruiter.getUser().getEmail());</span>
+<span class="nc" id="L218">			recruiter1 = recruiterRepository.findByUser(user);</span>
+<span class="nc" id="L219">			Role role = recruiter1.getUser().getRole();</span>
+
+<span class="nc bnc" id="L221" title="All 2 branches missed.">			if (role.equals(Role.ROLE_HRADMIN)) {</span>
+<span class="nc bnc" id="L222" title="All 4 branches missed.">				if (recruiter.isAddedPower() == true &amp;&amp; recruiter.isApprovePower() == false)</span>
+
+				{
+<span class="nc" id="L225">					recruiter1.setApprover(userId);</span>
+<span class="nc" id="L226">					user.setRole(Role.ROLE_RECRUITER);</span>
+<span class="nc" id="L227">					recruiter1.setUser(user);</span>
+<span class="nc" id="L228">					recruiter1.setAddedPower(recruiter.isAddedPower());</span>
+<span class="nc" id="L229">					recruiter1.setApprovePower(recruiter.isApprovePower());</span>
+<span class="nc" id="L230">					recruiterRepository.save(recruiter1);</span>
+
+<span class="nc" id="L232">					List&lt;Recruiter&gt; recruitersList = recruiterRepository.findByApprover(user.getUserId());</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">					for (Recruiter rec : recruitersList) {</span>
+<span class="nc" id="L234">						rec.setApprover(userId);</span>
+<span class="nc" id="L235">						recruiterRepository.save(rec);</span>
+<span class="nc" id="L236">					}</span>
+<span class="nc" id="L237">					updates.setNotification(&quot;Powers changed one true&quot;);</span>
+<span class="nc" id="L238">					updates.setSenderUserId(userId);</span>
+<span class="nc" id="L239">					updatesRepository.save(updates);</span>
+<span class="nc" id="L240">					receiverUpdates.setUpdates(updates);</span>
+<span class="nc" id="L241">					receiverUpdates.setReceiverUserId(recruiter1.getUser().getUserId());</span>
+<span class="nc" id="L242">					receiverUpdatesRepository.save(receiverUpdates);</span>
+
+<span class="nc" id="L244">					return ResponseEntity.status(HttpStatus.CREATED).body(recruiter1);</span>
+<span class="nc bnc" id="L245" title="All 4 branches missed.">				} else if (recruiter.isAddedPower() == false &amp;&amp; recruiter.isApprovePower() == false) {</span>
+<span class="nc" id="L246">					recruiter1.setApprover(userId);</span>
+<span class="nc" id="L247">					user.setRole(Role.ROLE_RECRUITER);</span>
+<span class="nc" id="L248">					recruiter1.setUser(user);</span>
+<span class="nc" id="L249">					recruiter1.setAddedPower(recruiter.isAddedPower());</span>
+<span class="nc" id="L250">					recruiter1.setApprovePower(recruiter.isApprovePower());</span>
+<span class="nc" id="L251">					recruiterRepository.save(recruiter1);</span>
+<span class="nc" id="L252">					List&lt;Recruiter&gt; recruitersList = recruiterRepository.findByAddedBy(user.getUserId());</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">					for (Recruiter rec : recruitersList) {</span>
+<span class="nc" id="L254">						rec.setAddedBy(userId);</span>
+<span class="nc" id="L255">						rec.setApprover(userId);</span>
+<span class="nc" id="L256">						recruiterRepository.save(rec);</span>
+<span class="nc" id="L257">					}</span>
+
+<span class="nc" id="L259">					updates.setNotification(&quot;Powers changed both false&quot;);</span>
+<span class="nc" id="L260">					updates.setSenderUserId(userId);</span>
+<span class="nc" id="L261">					updatesRepository.save(updates);</span>
+<span class="nc" id="L262">					receiverUpdates.setUpdates(updates);</span>
+<span class="nc" id="L263">					receiverUpdates.setReceiverUserId(recruiter1.getUser().getUserId());</span>
+<span class="nc" id="L264">					receiverUpdatesRepository.save(receiverUpdates);</span>
+
+<span class="nc" id="L266">					return ResponseEntity.status(HttpStatus.CREATED).body(recruiter1);</span>
+				} else {
+<span class="nc" id="L268">					return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;wrong powers&quot;);</span>
+				}
+
+<span class="nc bnc" id="L271" title="All 2 branches missed.">			} else if (role.equals(Role.ROLE_RECRUITER)) {</span>
+<span class="nc bnc" id="L272" title="All 4 branches missed.">				if (recruiter.isAddedPower() == true &amp;&amp; recruiter.isApprovePower() == true) {</span>
+<span class="nc" id="L273">					recruiter1.setApprover(recruiter1.getUser().getUserId());</span>
+<span class="nc" id="L274">					user.setRole(Role.ROLE_HRADMIN);</span>
+<span class="nc" id="L275">					recruiter1.setUser(user);</span>
+<span class="nc" id="L276">					recruiter1.setAddedPower(recruiter.isAddedPower());</span>
+<span class="nc" id="L277">					recruiter1.setApprovePower(recruiter.isApprovePower());</span>
+<span class="nc" id="L278">					recruiterRepository.save(recruiter1);</span>
+<span class="nc" id="L279">					return ResponseEntity.status(HttpStatus.CREATED).body(recruiter1);</span>
+<span class="nc bnc" id="L280" title="All 4 branches missed.">				} else if (recruiter.isAddedPower() == true &amp;&amp; recruiter.isApprovePower() == false) {</span>
+<span class="nc" id="L281">					recruiter1.setAddedPower(recruiter.isAddedPower());</span>
+<span class="nc" id="L282">					recruiter1.setApprovePower(recruiter.isApprovePower());</span>
+<span class="nc" id="L283">					recruiterRepository.save(recruiter1);</span>
+<span class="nc" id="L284">					return ResponseEntity.status(HttpStatus.CREATED).body(recruiter1);</span>
+<span class="nc bnc" id="L285" title="All 4 branches missed.">				} else if (recruiter.isAddedPower() == false &amp;&amp; recruiter.isApprovePower() == false) {</span>
+<span class="nc" id="L286">					recruiter1.setAddedPower(recruiter.isAddedPower());</span>
+<span class="nc" id="L287">					recruiter1.setApprovePower(recruiter.isApprovePower());</span>
+<span class="nc" id="L288">					recruiterRepository.save(recruiter1);</span>
+<span class="nc" id="L289">					List&lt;Recruiter&gt; recruitersList = recruiterRepository.findByAddedBy(user.getUserId());</span>
+<span class="nc bnc" id="L290" title="All 2 branches missed.">					for (Recruiter rec : recruitersList) {</span>
+<span class="nc" id="L291">						rec.setAddedBy(userId);</span>
+<span class="nc" id="L292">						rec.setApprover(userId);</span>
+<span class="nc" id="L293">						recruiterRepository.save(rec);</span>
+<span class="nc" id="L294">					}</span>
+<span class="nc" id="L295">					return ResponseEntity.status(HttpStatus.CREATED).body(recruiter1);</span>
+				} else {
+<span class="nc" id="L297">					return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;wrong powers&quot;);</span>
+				}
+			} else {
+<span class="nc" id="L300">				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Can't update powers&quot;);</span>
+			}
+
+<span class="nc" id="L303">		} catch (Exception e) {</span>
+<span class="nc" id="L304">			System.out.println(e);</span>
+<span class="nc" id="L305">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something wrong&quot;);</span>
+		}
+
+	}
+
+	@Override
+	public ResponseEntity&lt;?&gt; findRecruiterByEmail(User user) {
+		try {
+
+<span class="nc" id="L314">			Recruiter recruiter = new Recruiter();</span>
+<span class="nc" id="L315">			user = userRepository.findByemail(user.getEmail());</span>
+<span class="nc" id="L316">			recruiter = recruiterRepository.findByUser(user);</span>
+<span class="nc" id="L317">			return ResponseEntity.status(HttpStatus.CREATED).body(recruiter);</span>
+
+<span class="nc" id="L319">		} catch (Exception e) {</span>
+<span class="nc" id="L320">			System.out.println(e);</span>
+<span class="nc" id="L321">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something wrong&quot;);</span>
+		}
+
+	}
+
+	@Override
+	public ResponseEntity&lt;?&gt; changeApprover(User user, long userId) {
+
+		try {
+<span class="nc" id="L330">			Recruiter recruiter = new Recruiter();</span>
+
+<span class="nc" id="L332">			user = userRepository.findByemail(user.getEmail());</span>
+<span class="nc" id="L333">			recruiter = recruiterRepository.findByUser(user);</span>
+<span class="nc" id="L334">			recruiter.setApprover(userId);</span>
+<span class="nc" id="L335">			recruiterRepository.save(recruiter);</span>
+<span class="nc" id="L336">			return ResponseEntity.status(HttpStatus.CREATED).body(&quot;Approver changed&quot;);</span>
+<span class="nc" id="L337">		} catch (Exception e) {</span>
+<span class="nc" id="L338">			System.out.println(e);</span>
+<span class="nc" id="L339">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something wrong&quot;);</span>
+		}
+
+	}
+
+	@Override
+	public ResponseEntity&lt;?&gt; getUpdates(long userId) {
+		try {
+<span class="nc" id="L347">			List&lt;Updates&gt; updates = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L348">			updates = updatesRepository.findNotificationsByReceiverUserId(userId);</span>
+<span class="nc" id="L349">			return ResponseEntity.status(HttpStatus.CREATED).body(updates);</span>
+
+<span class="nc" id="L351">		} catch (Exception e) {</span>
+<span class="nc" id="L352">			System.out.println(e);</span>
+<span class="nc" id="L353">			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Something wrong&quot;);</span>
+		}
+	}
+
+	@Override
+	public List&lt;Recruiter&gt; getEmployeeList(User user) {
+
+		// User user = new User();
+<span class="nc" id="L361">		Recruiter recruiter = new Recruiter();</span>
+<span class="nc" id="L362">		recruiter = recruiterRepository.findByUser(user);</span>
+<span class="nc" id="L363">		List&lt;Recruiter&gt; allEmployees = recruiterRepository.findAll();</span>
+<span class="nc" id="L364">		List&lt;Recruiter&gt; subordinates = allEmployees.stream()</span>
+<span class="nc" id="L365">				.filter(recruiter1 -&gt; recruiter1.getAddedBy().equals(user.getUserId())).collect(Collectors.toList());</span>
+<span class="nc" id="L366">		return subordinates;</span>
+	}
+
+	@Override
+	public ResponseEntity&lt;?&gt; getNumberOfRecruiters() {
+<span class="nc" id="L371">		Role role = Role.ROLE_RECRUITER;</span>
+<span class="nc" id="L372">		List&lt;User&gt; recruiterList = userRepository.findAllByRole(role);</span>
+		//long numberOfRecruiters = recruiterList.size();
+		//Recruiter recruiter = new Recruiter();
+
+<span class="nc" id="L376">		return ResponseEntity.ok(recruiterList);</span>
+	}
+
+	/*@Override
+	public ResponseEntity&lt;?&gt; getNumberOfHrAdmins() {
+		Role role = Role.ROLE_HRADMIN;
+		List&lt;User&gt; hrAdminList = userRepository.findAllByRole(role);
+		long numberOfHrAdmins = hrAdminList.size();
+
+		for (User hrAdmins : hrAdminList) {
+			Recruiter recruiter = new Recruiter();
+			recruiter = recruiterRepository.findByUser(hrAdmins);
+
+			List&lt;Recruiter&gt; hrAdmin = new ArrayList&lt;&gt;();
+			if (recruiter.getAddedBy() == 0) {
+				hrAdmin.add(recruiter);
+			}
+		}
+
+		return ResponseEntity.ok(numberOfHrAdmins);
+	}*/
+
+	@Override
+	public ResponseEntity&lt;?&gt; getNumberOfCandidates() {
+<span class="nc" id="L400">		Role role = Role.ROLE_CANDIDATE;</span>
+<span class="nc" id="L401">		List&lt;User&gt; candidateList = userRepository.findAllByRole(role);</span>
+		//long numberOfCandidates = candidateList.size();
+<span class="nc" id="L403">		return ResponseEntity.ok(candidateList);</span>
+	}
+
+//	public ResponseEntity&lt;?&gt; getHrAdminDetails() {
+//
+//		Role role = Role.ROLE_HRADMIN;
+//		Company company = new Company();
+//		List&lt;Recruiter&gt; companyrecruiterDetails = new ArrayList&lt;&gt;();
+//		List&lt;Company&gt; companyDetails = companyRepository.findAll();
+//		for (Company companyDetail : companyDetails) {
+//			if (companyDetail.getRegistrationApproval()) {
+//				companyrecruiterDetails = recruiterRepository.findAll().stream()
+//						.filter(recruiter -&gt; recruiter.getAddedBy() == 0).collect(Collectors.toList());
+//			}
+//		}
+//		return ResponseEntity.ok(companyrecruiterDetails);
+//	}
+
+	public ResponseEntity&lt;?&gt; getHrAdminDetails() {
+
+<span class="nc" id="L423">		List&lt;Recruiter&gt; companyrecruiterDetails = recruiterRepository.findAll().stream().filter(</span>
+<span class="nc bnc" id="L424" title="All 2 branches missed.">				recruiter -&gt; recruiter.getAddedBy() == 0)</span>
+<span class="nc" id="L425">				.collect(Collectors.toList());</span>
+<span class="nc" id="L426">		return ResponseEntity.ok(companyrecruiterDetails);</span>
+	}
+
+	@Override
+	public ResponseEntity&lt;?&gt; getCandidateDetails() {
+//		CandidateDetailsDto candidateDetailsDto = new CandidateDetailsDto();
+<span class="nc" id="L432">		Role role = Role.ROLE_CANDIDATE;</span>
+<span class="nc" id="L433">		List&lt;User&gt; candidateList = userRepository.findAllByRole(role);</span>
+<span class="nc" id="L434">		List&lt;CandidateDetailsDto&gt; candidateListDto = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L435" title="All 2 branches missed.">		for (User candidate : candidateList) {</span>
+<span class="nc" id="L436">			CandidateDetailsDto candidateDetailsDto = new CandidateDetailsDto(candidate.getUserId() ,candidate.getUserName(),</span>
+<span class="nc" id="L437">					candidate.getCandidate().getCandidateAadhar(), candidate.getUsername(), candidate.getPhoneNumber(),candidate.getCandidate().getCandidateId());</span>
+<span class="nc" id="L438">			candidateListDto.add(candidateDetailsDto);</span>
+<span class="nc" id="L439">		}</span>
+		
+<span class="nc" id="L441">		return ResponseEntity.ok(candidateListDto);</span>
+	}
+	
+
+	@Override
+	public Page&lt;ResponseEntity&lt;CandidateDetailsDto&gt;&gt; findProductsWithPagination(int offset, int pageSize) {
+<span class="nc" id="L447">		Role role = Role.ROLE_CANDIDATE;</span>
+<span class="nc" id="L448">        Page&lt;User&gt; candidateList = userRepository.findAll(PageRequest.of(offset, pageSize));</span>
+<span class="nc" id="L449">        List&lt;CandidateDetailsDto&gt; candidateListDto = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L450" title="All 2 branches missed.">		for (User candidate : candidateList) {</span>
+<span class="nc" id="L451">			CandidateDetailsDto candidateDetailsDto = new CandidateDetailsDto(candidate.getUserId() ,candidate.getUserName(),</span>
+<span class="nc" id="L452">					candidate.getCandidate().getCandidateAadhar(), candidate.getUsername(), candidate.getPhoneNumber(),candidate.getCandidate().getCandidateId());</span>
+<span class="nc" id="L453">			candidateListDto.add(candidateDetailsDto);</span>
+<span class="nc" id="L454">		}</span>
+<span class="nc" id="L455">        return (Page&lt;ResponseEntity&lt;CandidateDetailsDto&gt;&gt;) ResponseEntity.ok(candidateListDto);</span>
+	}
+
+	@Override
+	public Page&lt;?&gt; findAllWithPagination(Pageable pageable) {
+<span class="nc" id="L460">		return null;</span>
+//		return candidateRepository.findAll(pageable);
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

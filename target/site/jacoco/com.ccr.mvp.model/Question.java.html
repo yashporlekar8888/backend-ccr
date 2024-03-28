@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Question.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ccr-mvp</a> &gt; <a href="index.source.html" class="el_package">com.ccr.mvp.model</a> &gt; <span class="el_source">Question.java</span></div><h1>Question.java</h1><pre class="source lang-java linenums">package com.ccr.mvp.model;
+
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import lombok.Data;
+
+
+@Entity
+<span class="pc bnc" id="L23" title="All 62 branches missed.">@Data</span>
+public class Question {
+	
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+<span class="nc" id="L28">	private Long questionId;</span>
+<span class="nc" id="L29">	private String questionContent;</span>
+<span class="nc" id="L30">	private Double weightage;</span>
+	@Temporal(TemporalType.DATE)
+<span class="nc" id="L32">	private Date createdAt;</span>
+	
+
+<span class="nc" id="L35">	LocalDateTime updatedAt;</span>
+
+
+	@OneToMany(mappedBy = &quot;question&quot;)
+	@JsonIgnore
+<span class="nc" id="L40">	private List&lt;Answer&gt; answerValue;</span>
+	
+	@ManyToOne
+	@JoinColumn(name = &quot;category_id&quot;)
+<span class="nc" id="L44">	private Category category;</span>
+
+	
+	
+	
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
